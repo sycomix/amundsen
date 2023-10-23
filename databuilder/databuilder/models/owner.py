@@ -96,12 +96,7 @@ class Owner(GraphSerializable, TableSerializable, AtlasSerializable):
     def _create_record_iterator(self) -> Iterator[RDSModel]:
         for email in self.owner_emails:
             if email:
-                user_record = RDSUser(
-                    rk=User.get_user_model_key(email=email),
-                    email=email
-                )
-                yield user_record
-
+                yield RDSUser(rk=User.get_user_model_key(email=email), email=email)
                 if self.start_label == TableMetadata.TABLE_NODE_LABEL:
                     yield RDSTableOwner(
                         table_rk=self.start_key,
@@ -123,26 +118,22 @@ class Owner(GraphSerializable, TableSerializable, AtlasSerializable):
 
         entity_attrs = get_entity_attrs(attrs_mapping)
 
-        entity = AtlasEntity(
+        return AtlasEntity(
             typeName=AtlasCommonTypes.user,
             operation=AtlasSerializedEntityOperation.CREATE,
             attributes=entity_attrs,
-            relationships=None
+            relationships=None,
         )
 
-        return entity
-
     def _create_atlas_owner_relation(self, owner: str) -> AtlasRelationship:
-        table_relationship = AtlasRelationship(
+        return AtlasRelationship(
             relationshipType=AtlasRelationshipTypes.resource_owner,
             entityType1=AtlasCommonTypes.data_set,
             entityQualifiedName1=self.start_key,
             entityType2=AtlasCommonTypes.user,
             entityQualifiedName2=User.get_user_model_key(email=owner),
-            attributes={}
+            attributes={},
         )
-
-        return table_relationship
 
     def _create_next_atlas_entity(self) -> Iterator[AtlasEntity]:
         for owner in self.owner_emails:

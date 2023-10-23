@@ -27,7 +27,10 @@ def feedback() -> Response:
     try:
         mail_client = get_mail_client()
         data = request.form.to_dict()
-        html_content = ''.join('<div><strong>{}:</strong><br/>{}</div><br/>'.format(k, v) for k, v in data.items())
+        html_content = ''.join(
+            f'<div><strong>{k}:</strong><br/>{v}</div><br/>'
+            for k, v in data.items()
+        )
 
         # action logging
         feedback_type = data.get('feedback-type')
@@ -59,16 +62,16 @@ def feedback() -> Response:
         if 200 <= status_code < 300:
             message = 'Success'
         else:
-            message = 'Mail client failed with status code ' + str(status_code)
+            message = f'Mail client failed with status code {str(status_code)}'
             logging.error(message)
 
         return make_response(jsonify({'msg': message}), status_code)
     except MailClientNotImplemented as e:
-        message = 'Encountered exception: ' + str(e)
+        message = f'Encountered exception: {str(e)}'
         logging.exception(message)
         return make_response(jsonify({'msg': message}), HTTPStatus.NOT_IMPLEMENTED)
     except Exception as e1:
-        message = 'Encountered exception: ' + str(e1)
+        message = f'Encountered exception: {str(e1)}'
         logging.exception(message)
         return make_response(jsonify({'msg': message}), HTTPStatus.INTERNAL_SERVER_ERROR)
 
@@ -116,6 +119,6 @@ def notification() -> Response:
             sender=sender
         )
     except Exception as e:
-        message = 'Encountered exception: ' + str(e)
+        message = f'Encountered exception: {str(e)}'
         logging.exception(message)
         return make_response(jsonify({'msg': message}), HTTPStatus.INTERNAL_SERVER_ERROR)

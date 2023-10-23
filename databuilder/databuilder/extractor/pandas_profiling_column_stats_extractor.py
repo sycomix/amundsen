@@ -115,9 +115,7 @@ class PandasProfilingColumnStatsExtractor(Extractor):
 
     def extract(self) -> Any:
         try:
-            result = next(self._extract_iter)
-
-            return result
+            return next(self._extract_iter)
         except StopIteration:
             return None
 
@@ -129,19 +127,23 @@ class PandasProfilingColumnStatsExtractor(Extractor):
 
         for column_name, column_stats in variables.items():
             for _stat_name, stat_value in column_stats.items():
-                stat_spec = self.stat_mappings.get(_stat_name)
-
-                if stat_spec:
+                if stat_spec := self.stat_mappings.get(_stat_name):
                     stat_name, stat_modifier = stat_spec
 
                     if isinstance(stat_value, float):
                         stat_value = self.round_value(stat_value)
 
-                    stat = TableColumnStats(table_name=self.table_name, col_name=column_name, stat_name=stat_name,
-                                            stat_val=stat_modifier(stat_value), start_epoch=report_time, end_epoch='0',
-                                            db=self.database_name, cluster=self.cluster_name, schema=self.schema_name)
-
-                    yield stat
+                    yield TableColumnStats(
+                        table_name=self.table_name,
+                        col_name=column_name,
+                        stat_name=stat_name,
+                        stat_val=stat_modifier(stat_value),
+                        start_epoch=report_time,
+                        end_epoch='0',
+                        db=self.database_name,
+                        cluster=self.cluster_name,
+                        schema=self.schema_name,
+                    )
 
     def _load_report(self) -> Dict[str, Any]:
         path = self.conf.get(PandasProfilingColumnStatsExtractor.FILE_PATH)
@@ -150,9 +152,7 @@ class PandasProfilingColumnStatsExtractor(Extractor):
             with open(path, 'r') as f:
                 _data = f.read()
 
-            data = json.loads(_data)
-
-            return data
+            return json.loads(_data)
         except Exception:
             return {}
 

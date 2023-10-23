@@ -24,9 +24,10 @@ def get_issue_tracker_client() -> BaseIssueTrackerClient:
     with _issue_tracker_client_lock:
         if _issue_tracker_client:
             return _issue_tracker_client
-        else:
             # Gather all the configuration to create an IssueTrackerClient
-            if app.config['ISSUE_TRACKER_CLIENT_ENABLED']:
+        if app.config['ISSUE_TRACKER_CLIENT_ENABLED']:
+            if app.config['ISSUE_TRACKER_CLIENT']:
+                client = import_string(app.config['ISSUE_TRACKER_CLIENT'])
                 url = app.config['ISSUE_TRACKER_URL']
                 user = app.config['ISSUE_TRACKER_USER']
                 password = app.config['ISSUE_TRACKER_PASSWORD']
@@ -34,13 +35,11 @@ def get_issue_tracker_client() -> BaseIssueTrackerClient:
                 max_results = app.config['ISSUE_TRACKER_MAX_RESULTS']
                 issue_labels = app.config['ISSUE_LABELS']
 
-                if app.config['ISSUE_TRACKER_CLIENT']:
-                    client = import_string(app.config['ISSUE_TRACKER_CLIENT'])
-                    _issue_tracker_client = client(issue_labels=issue_labels,
-                                                   issue_tracker_url=url,
-                                                   issue_tracker_user=user,
-                                                   issue_tracker_password=password,
-                                                   issue_tracker_project_id=project_id,
-                                                   issue_tracker_max_results=max_results)
+                _issue_tracker_client = client(issue_labels=issue_labels,
+                                               issue_tracker_url=url,
+                                               issue_tracker_user=user,
+                                               issue_tracker_password=password,
+                                               issue_tracker_project_id=project_id,
+                                               issue_tracker_max_results=max_results)
 
     return _issue_tracker_client

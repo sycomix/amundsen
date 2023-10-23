@@ -15,26 +15,36 @@ from databuilder.models.dashboard.dashboard_metadata import DashboardMetadata
 
 class ApacheSupersetMetadataExtractor(ApacheSupersetBaseExtractor):
     def last_modified_field_mappings(self) -> type_fields_mapping:
-        result = [
+        return [
             ('dashboard_id', 'result.id', lambda x: str(x), ''),
             ('dashboard_name', 'result.dashboard_title', None, ''),
-            ('last_modified_timestamp', 'result.changed_on',
-             lambda _date: self.parse_date(_date), 0)
+            (
+                'last_modified_timestamp',
+                'result.changed_on',
+                lambda _date: self.parse_date(_date),
+                0,
+            ),
         ]
 
-        return result
-
     def dashboard_metadata_field_mappings(self) -> type_fields_mapping:
-        result = [
+        return [
             ('dashboard_id', 'result.id', lambda x: str(x), ''),
             ('dashboard_name', 'result.dashboard_title', None, ''),
             ('dashboard_url', 'result.url', lambda x: self.base_url + x, ''),
-            ('created_timestamp', 'result.created_on', None, 0),  # currently not available in superset dashboard api
+            (
+                'created_timestamp',
+                'result.created_on',
+                None,
+                0,
+            ),  # currently not available in superset dashboard api
             ('tags', '', lambda x: [x] if x else [], []),  # not available
-            ('description', 'result.description', None, '')  # currently not available in superset dashboard api
+            (
+                'description',
+                'result.description',
+                None,
+                '',
+            ),  # currently not available in superset dashboard api
         ]
-
-        return result
 
     def _get_extract_iter(self) -> Iterator[Union[DashboardMetadata, DashboardLastModifiedTimestamp, None]]:
         ids = self._get_resource_ids('dashboard')
@@ -58,6 +68,4 @@ class ApacheSupersetMetadataExtractor(ApacheSupersetBaseExtractor):
     def _get_dashboard_details(self, dashboard_id: str) -> Dict[str, Any]:
         url = self.build_full_url(f'api/v1/dashboard/{dashboard_id}')
 
-        data = self.execute_query(url)
-
-        return data
+        return self.execute_query(url)

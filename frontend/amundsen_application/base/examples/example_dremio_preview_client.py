@@ -60,7 +60,7 @@ class DremioPreviewClient(BasePreviewClient):
 
         try:
             # Format base SQL_STATEMENT with request table and schema
-            schema = '"{}"'.format(params['schema'].replace('.', '"."'))
+            schema = f""""{params['schema'].replace('.', '"."')}\""""
             table = params['tableName']
             sql = DremioPreviewClient.SQL_STATEMENT.format(schema=schema,
                                                            table=table)

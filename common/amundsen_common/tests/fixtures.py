@@ -39,17 +39,18 @@ class Fixtures:
 
     @staticmethod
     def next_database() -> str:
-        return Fixtures.next_item(items=list(["database1", "database2"]))
+        return Fixtures.next_item(items=["database1", "database2"])
 
     @staticmethod
     def next_application(*, application_id: Optional[str] = None) -> Application:
         if not application_id:
             application_id = Fixtures.next_string(prefix='ap', length=8)
-        application = Application(application_url=f'https://{application_id}.example.com',
-                                  description=f'{application_id} description',
-                                  name=application_id.capitalize(),
-                                  id=application_id)
-        return application
+        return Application(
+            application_url=f'https://{application_id}.example.com',
+            description=f'{application_id} description',
+            name=application_id.capitalize(),
+            id=application_id,
+        )
 
     @staticmethod
     def next_tag(*, tag_name: Optional[str] = None) -> Tag:

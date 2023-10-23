@@ -91,7 +91,7 @@ def timestamp() -> datetime:
 
 
 def is_reasonable_vertex_label(label: str) -> bool:
-    vertex_labels = set([each.value.label for each in VertexTypes])
+    vertex_labels = {each.value.label for each in VertexTypes}
     return label in vertex_labels
 
 
@@ -134,8 +134,7 @@ class FromResultSet:
     @classmethod
     def generator(cls, result_set: ResultSet) -> Iterable[Any]:
         for part in result_set:
-            for item in part:
-                yield item
+            yield from part
 
     @classmethod
     def iterate(cls, result_set: ResultSet) -> None:
@@ -202,13 +201,13 @@ class ClientQueryExecutor(ExecuteQuery):
                  bindings: Optional[Mapping[str, Any]] = None) -> V:
         if isinstance(query, Traversal):
             if bindings is not None:
-                raise AssertionError(f'expected bindings to be none')
+                raise AssertionError('expected bindings to be none')
             query_text = self.traversal_translator(query)
         else:
             query_text = query
 
         if not isinstance(query_text, str):
-            raise AssertionError(f'expected str')
+            raise AssertionError('expected str')
         result_set = self.client.submit(query_text, bindings)
         return get(result_set)
 
@@ -421,11 +420,8 @@ def _vertex_property(*, g: GraphTraversal, name: str, value: Any, cardinality: O
         raise AssertionError('must pass one of label or cardinality')
     if cardinality is not None:
         _cardinality = cardinality
-    elif label is not None:
-        _cardinality = get_cardinality_for(label, name)
     else:
-        raise RuntimeError()
-
+        _cardinality = get_cardinality_for(label, name)
     return _property_or_drop(g=g, name=name, value=value, cardinality=checkNotNone(_cardinality))
 
 
@@ -433,17 +429,15 @@ def _edge_property(*, g: GraphTraversal, name: str, value: Any) -> GraphTraversa
     return _property_or_drop(g=g, name=name, value=value, cardinality=None)
 
 
-def _property_or_drop(*, g: GraphTraversal, name: str, value: Any, cardinality: Optional[Cardinality]) \
-        -> GraphTraversal:
+def _property_or_drop(*, g: GraphTraversal, name: str, value: Any, cardinality: Optional[Cardinality]) -> GraphTraversal:
     """
     You want to use _vertex_property or _edge_property.
     """
     if value is None:
         return g.sideEffect(__.properties(name).drop())
-    else:
-        # complicated: edges can't have cardinality supplied and are implied to be single
-        p = __.property(name, value) if cardinality is None else __.property(cardinality, name, value)
-        return _append_traversal(g, p)
+    # complicated: edges can't have cardinality supplied and are implied to be single
+    p = __.property(name, value) if cardinality is None else __.property(cardinality, name, value)
+    return _append_traversal(g, p)
 
 
 def _V(label: Union[str, VertexTypes, VertexType], key: Optional[Union[str, TextP]],
@@ -476,12 +470,7 @@ def _V(label: Union[str, VertexTypes, VertexType], key: Optional[Union[str, Text
     # should we do this when using the V(id)? there are a couple or one case where we use it to filter  so seems handy
     if properties is not None:
         for name, value in properties.items():
-            if value is not None:
-                # you can have value be a predicate, like within('foo','bar') or such
-                g = g.has(name, value)
-            else:
-                g = g.hasNot(name)
-
+            g = g.has(name, value) if value is not None else g.hasNot(name)
     return g
 
 
@@ -498,9 +487,9 @@ def _has(*, g: Traversal, label: Union[None, str, VertexTypes, EdgeTypes, Vertex
         _label = get_label_from(label)
         if key is None:
             g = g.hasLabel(_label)
+        elif key_property_name is None:
+            raise AssertionError('must supply key_property_name if supplying key')
         else:
-            if key_property_name is None:
-                raise AssertionError('must supply key_property_name if supplying key')
             # you can have key be a predicate, like within('foo','bar') or such
             g = g.has(_label, key_property_name, key)
     elif key is not None:
@@ -513,12 +502,7 @@ def _has(*, g: Traversal, label: Union[None, str, VertexTypes, EdgeTypes, Vertex
 
     if properties is not None:
         for name, value in properties.items():
-            if value is not None:
-                # you can have value be a predicate, like within('foo','bar') or such
-                g = g.has(name, value)
-            else:
-                g = g.hasNot(name)
-
+            g = g.has(name, value) if value is not None else g.hasNot(name)
     return g
 
 
@@ -576,14 +560,18 @@ def _link(*, executor: ExecuteQuery, execute: Optional[Callable[[ResultSet], TYP
     """
 
     if (vertex1_label is not None and vertex1_key is not None) == (vertex1_id is not None):
-        raise AssertionError(f'pass either vertex1_label and vertex1_key or vertex1_id, but not both')
+        raise AssertionError(
+            'pass either vertex1_label and vertex1_key or vertex1_id, but not both'
+        )
     if (vertex2_label is not None and vertex2_key is not None) == (vertex2_id is not None):
-        raise AssertionError(f'pass either vertex2_label and vertex2_key or vertex2_id, but not both')
+        raise AssertionError(
+            'pass either vertex2_label and vertex2_key or vertex2_id, but not both'
+        )
 
     # Return the raw id of a vertex
     if vertex1_id is None:
         if (key_property_name is None) or (vertex1_label is None):
-            raise AssertionError(f'expected both key_property_name and vertex1_label')
+            raise AssertionError('expected both key_property_name and vertex1_label')
         # we used to query to find this, but now that we're deterministically generating them we can do:
         vertex1_id = ensure_vertex_type(vertex1_label).id(**{key_property_name: vertex1_key})
         # but let's query to ensure it exists (which the previous pattern also ensured
@@ -591,7 +579,7 @@ def _link(*, executor: ExecuteQuery, execute: Optional[Callable[[ResultSet], TYP
 
     if vertex2_id is None:
         if (key_property_name is None) or (vertex2_label is None):
-            raise AssertionError(f'expected both key_property_name and vertex2_label')
+            raise AssertionError('expected both key_property_name and vertex2_label')
         vertex2_id = ensure_vertex_type(vertex2_label).id(**{key_property_name: vertex2_key})
         executor(query=g.V(vertex2_id), get=FromResultSet.getOnly)
 
@@ -648,7 +636,7 @@ def _expire_other_links(  # noqa: C901
     # Return the raw id of a vertex
     if vertex1_id is None:
         if (key_property_name is None) or (vertex1_label is None):
-            raise AssertionError(f'expected both key_property_name and vertex1_label')
+            raise AssertionError('expected both key_property_name and vertex1_label')
         # we used to query to find this, but now that we're deterministically generating them we can do:
         vertex1_id = ensure_vertex_type(vertex1_label).id(**{key_property_name: vertex1_key})
         # but let's query to ensure it exists (which the previous pattern also ensured
@@ -657,15 +645,15 @@ def _expire_other_links(  # noqa: C901
     if vertex2_id is None and vertex2_key is not None:
         # TODO support getting more than one here
         if (key_property_name is None) or (vertex2_label is None):
-            raise AssertionError(f'expected both key_property_name and vertex2_label')
+            raise AssertionError('expected both key_property_name and vertex2_label')
         vertex2_id = ensure_vertex_type(vertex2_label).id(**{key_property_name: vertex2_key})
         executor(query=g.V(vertex2_id), get=FromResultSet.getOnly)
 
     if vertex1_id is not None:
         g = g.V(vertex1_id)
+    elif vertex1_label is None:
+        raise AssertionError('expected vertex1_label')
     else:
-        if vertex1_label is None:
-            raise AssertionError(f'expected vertex1_label')
         g = g.V().hasLabel(get_label_from(vertex1_label))
 
     # Traverse the edges from vertex 1
@@ -679,7 +667,7 @@ def _expire_other_links(  # noqa: C901
     _filter = __.inV() if edge_direction == Direction.OUT else __.outV()
     if vertex2_id is None:
         if vertex2_label is None:
-            raise AssertionError(f'expected vertex2_label')
+            raise AssertionError('expected vertex2_label')
         g = g.filter(_filter)
     elif isinstance(vertex2_id, (int, str)):
         g = g.filter(_append_traversal(_filter, __.id().is_(P.neq(vertex2_id))))
@@ -702,14 +690,18 @@ def _expire_link(*, executor: ExecuteQuery, g: GraphTraversalSource,
     label + key, or by providing the gremlin vertex ids directly
     """
     if (vertex1_label is not None and vertex1_key is not None) == (vertex1_id is not None):
-        raise AssertionError(f'pass either vertex1_label and vertex1_key or vertex1_id, but not both')
+        raise AssertionError(
+            'pass either vertex1_label and vertex1_key or vertex1_id, but not both'
+        )
     if (vertex2_label is not None and vertex2_key is not None) == (vertex2_id is not None):
-        raise AssertionError(f'pass either vertex2_label and vertex2_key or vertex2_id, but not both')
+        raise AssertionError(
+            'pass either vertex2_label and vertex2_key or vertex2_id, but not both'
+        )
 
     # Return the raw ids of the vertices
     if vertex1_id is None:
         if (key_property_name is None) or (vertex1_label is None):
-            raise AssertionError(f'expected both key_property_name and vertex1_label')
+            raise AssertionError('expected both key_property_name and vertex1_label')
         # we used to query to find this, but now that we're deterministically generating them we can do:
         vertex1_id = ensure_vertex_type(vertex1_label).id(**{key_property_name: vertex1_key})
         # but let's query to ensure it exists (which the previous pattern also ensured
@@ -717,14 +709,16 @@ def _expire_link(*, executor: ExecuteQuery, g: GraphTraversalSource,
 
     if vertex2_id is None:
         if (key_property_name is None) or (vertex2_label is None):
-            raise AssertionError(f'expected both key_property_name and vertex2_label')
+            raise AssertionError('expected both key_property_name and vertex2_label')
         # we used to query to find this, but now that we're deterministically generating them we can do:
         vertex2_id = ensure_vertex_type(vertex2_label).id(**{key_property_name: vertex2_key})
         # but let's query to ensure it exists (which the previous pattern also ensured
         executor(query=g.V(vertex2_id), get=FromResultSet.getOnly)
 
     if (vertex1_id is None) or (vertex2_id is None) or (vertex1_id == vertex2_id):
-        raise AssertionError(f'pass either vertex1_label and vertex1_key or vertex1_id, but not both')
+        raise AssertionError(
+            'pass either vertex1_label and vertex1_key or vertex1_id, but not both'
+        )
 
     g = g.V(vertex1_id)
     g = g.bothE(get_label_from(edge_label)).where(bothV().hasId(vertex2_id))
@@ -748,11 +742,7 @@ def _edges_between(*, g: Traversal, label: Union[None, str, EdgeTypes, EdgeType]
     if (vertex1_alias is None) or (vertex1_alias == vertex2_alias):
         raise AssertionError(f'vertex1_alias={vertex1_alias}, vertex2_alias={vertex2_alias}')
 
-    if label is not None:
-        g = g.bothE(get_label_from(label))
-    else:
-        g = g.bothE()
-
+    g = g.bothE(get_label_from(label)) if label is not None else g.bothE()
     g = g.where(__.otherV().as_(vertex1_alias))
 
     if 'expired' not in properties:
@@ -781,11 +771,7 @@ def _edges_from(*, g: Union[GraphTraversalSource, GraphTraversal],
 
     g = _append_traversal(g, vertex1)
 
-    if edge_label is not None:
-        g = g.outE(get_label_from(edge_label))
-    else:
-        g = g.outE()
-
+    g = g.outE(get_label_from(edge_label)) if edge_label is not None else g.outE()
     if 'expired' not in edge_properties:
         edge_properties['expired'] = None
     g = _has(g=g, label=None, key=None, key_property_name=None, properties=edge_properties)
@@ -815,11 +801,7 @@ def _edges_to(*, g: Union[GraphTraversalSource, GraphTraversal],
 
     g = _append_traversal(g, vertex1)
 
-    if edge_label is not None:
-        g = g.inE(get_label_from(edge_label))
-    else:
-        g = g.inE()
-
+    g = g.inE(get_label_from(edge_label)) if edge_label is not None else g.inE()
     g = _has(g=g, label=None, key=None, key_property_name=None, properties=edge_properties)
 
     if vertex2 is not None:
@@ -1055,13 +1037,17 @@ class AbstractGremlinProxy(BaseProxy):
         readers = self._get_table_readers(table_uri=table_uri)
 
         users_by_type: Dict[str, List[User]] = {}
-        users_by_type['owner'] = _safe_get_list(result, f'all_owners', transform=self._convert_to_user) or []
+        users_by_type['owner'] = (
+            _safe_get_list(result, 'all_owners', transform=self._convert_to_user)
+            or []
+        )
 
         stats = _safe_get_list(result, 'stats', transform=self._convert_to_statistics) or []
 
         # add in the last 5 days (but only if present according to test)
         def transform(x: int) -> Optional[Stat]:
             return None if x == 0 else Stat(stat_type='num_reads_last_5_days', stat_val=str(x))
+
         num_reads_last_5_days = _safe_get(result, 'num_reads_last_5_days', transform=transform)
         if num_reads_last_5_days:
             stats.append(num_reads_last_5_days)
@@ -1147,17 +1133,17 @@ class AbstractGremlinProxy(BaseProxy):
 
     def _get_table_columns(self, *, table_uri: str) -> List[Column]:
         g = _V(g=self.g, label=VertexTypes.Table.value.label, key=table_uri). \
-            outE(EdgeTypes.Column.value.label). \
-            inV().hasLabel(VertexTypes.Column.value.label).as_('column')
+                outE(EdgeTypes.Column.value.label). \
+                inV().hasLabel(VertexTypes.Column.value.label).as_('column')
         g = g.coalesce(
             select('column').out(EdgeTypes.Description.value.label).hasLabel(VertexTypes.Description.value.label).fold()
         ).as_('description')
         g = g.coalesce(select('column').outE(EdgeTypes.Stat.value.label).inV().
                        hasLabel(VertexTypes.Stat.value.label).fold()).as_('stats')
         g = g.select('column', 'description', 'stats'). \
-            by(valueMap()). \
-            by(unfold().valueMap().fold()). \
-            by(unfold().valueMap().fold())
+                by(valueMap()). \
+                by(unfold().valueMap().fold()). \
+                by(unfold().valueMap().fold())
         results = self.query_executor()(query=g, get=FromResultSet.toList)
 
         cols = []
@@ -1169,8 +1155,7 @@ class AbstractGremlinProxy(BaseProxy):
                          sort_order=_safe_get(result, 'column', 'sort_order', transform=int),
                          stats=_safe_get_list(result, 'stats', transform=self._convert_to_statistics) or [])
             cols.append(col)
-        cols = sorted(cols, key=attrgetter('sort_order'))
-        return cols
+        return sorted(cols, key=attrgetter('sort_order'))
 
     def _get_table_readers(self, *, table_uri: str) -> List[Reader]:
         g = _edges_to(g=self.g, vertex1_label=VertexTypes.Table, vertex1_key=table_uri,
@@ -1183,14 +1168,15 @@ class AbstractGremlinProxy(BaseProxy):
         g = g.by(inV().values('name'))
         results = self.query_executor()(query=g, get=FromResultSet.toList)
 
-        readers = []
-        for result in results:
-            # no need for _safe_get in here because the query
-            readers.append(Reader(
-                user=User(user_id=result['user']['id'], email=result['user']['email']),
-                read_count=int(result['read'])))
-
-        return readers
+        return [
+            Reader(
+                user=User(
+                    user_id=result['user']['id'], email=result['user']['email']
+                ),
+                read_count=int(result['read']),
+            )
+            for result in results
+        ]
 
     @timer_with_counter
     @overrides
@@ -1410,28 +1396,29 @@ class AbstractGremlinProxy(BaseProxy):
         g = _V(g=self.g, label=VertexTypes.Table, key=within(*table_uris), key_property_name=self.key_property_name)
         g = g.as_('table')
         g = g.inE(EdgeTypes.Table.value.label). \
-            outV().hasLabel(VertexTypes.Schema.value.label).as_('schema')
+                outV().hasLabel(VertexTypes.Schema.value.label).as_('schema')
         g = g.inE(EdgeTypes.Schema.value.label). \
-            outV().hasLabel(VertexTypes.Cluster.value.label).as_('cluster')
+                outV().hasLabel(VertexTypes.Cluster.value.label).as_('cluster')
         g = g.inE(EdgeTypes.Cluster.value.label). \
-            outV().hasLabel(VertexTypes.Database.value.label).as_('database')
+                outV().hasLabel(VertexTypes.Database.value.label).as_('database')
         g = g.coalesce(
             select('table').out(EdgeTypes.Description.value.label).hasLabel(VertexTypes.Description.value.label).fold()
         ).as_('description')
         g = g.select('database', 'cluster', 'schema', 'table', 'description'). \
-            by('name').by('name').by('name').by('name').by(unfold().values('description').fold())
-        results = self.query_executor()(query=g, get=FromResultSet.toList)
-
-        if not results:
+                by('name').by('name').by('name').by('name').by(unfold().values('description').fold())
+        if results := self.query_executor()(query=g, get=FromResultSet.toList):
+            return [
+                PopularTable(
+                    database=result['database'],
+                    cluster=result['cluster'],
+                    schema=result['schema'],
+                    name=result['table'],
+                    description=_safe_get(result, 'description'),
+                )
+                for result in results
+            ]
+        else:
             return []
-
-        popular_tables = []
-        for result in results:
-            popular_tables.append(PopularTable(
-                database=result['database'], cluster=result['cluster'], schema=result['schema'], name=result['table'],
-                description=_safe_get(result, 'description')
-            ))
-        return popular_tables
 
     def _get_popular_tables_uris(self, num_entries: int) -> List[str]:
         """
@@ -1451,12 +1438,12 @@ class AbstractGremlinProxy(BaseProxy):
         # num_entries
         g = g.unfold().order().by(MapColumn.values, Order.decr).limit(num_entries)
 
-        results_list = self.query_executor()(query=g, get=FromResultSet.toList)
-        if not results_list:
+        if results_list := self.query_executor()(
+            query=g, get=FromResultSet.toList
+        ):
+            return [key for result in results_list for key, count in result.items()]
+        else:
             return []
-
-        results = [key for result in results_list for key, count in result.items()]
-        return results
 
     @timer_with_counter
     @overrides
@@ -1529,27 +1516,30 @@ class AbstractGremlinProxy(BaseProxy):
                        inV().has(VertexTypes.Description.value.label, 'source', 'user').fold()).as_('description')
         g = g.coalesce(select('table').outE(EdgeTypes.Description.value.label).
                        inV().has(VertexTypes.Description.value.label, 'source', without('user')).fold()). \
-            as_('programmatic_descriptions')
+                as_('programmatic_descriptions')
         g = g.select('database', 'cluster', 'schema', 'table', 'description', 'programmatic_descriptions'). \
-            by(unfold().values('name').fold()). \
-            by(unfold().values('name').fold()). \
-            by(unfold().values('name').fold()). \
-            by('name'). \
-            by(unfold().valueMap().fold()). \
-            by(unfold().valueMap().fold())
+                by(unfold().values('name').fold()). \
+                by(unfold().values('name').fold()). \
+                by(unfold().values('name').fold()). \
+                by('name'). \
+                by(unfold().valueMap().fold()). \
+                by(unfold().valueMap().fold())
 
         results = self.query_executor()(query=g, get=FromResultSet.toList)
         if not results:
             # raise NotFoundException(f'User {user_id} does not {relation_type} any resources')
             return {'table': []}
 
-        popular_tables = []
-        for r in results:
-            popular_tables.append(PopularTable(
-                database=_safe_get(r, 'database'), cluster=_safe_get(r, 'cluster'), schema=_safe_get(r, 'schema'),
+        popular_tables = [
+            PopularTable(
+                database=_safe_get(r, 'database'),
+                cluster=_safe_get(r, 'cluster'),
+                schema=_safe_get(r, 'schema'),
                 name=r.get('table'),
-                description=_safe_get(r, 'description', 'description')))
-
+                description=_safe_get(r, 'description', 'description'),
+            )
+            for r in results
+        ]
         # this is weird but the convention
         return {'table': popular_tables}
 
@@ -1626,10 +1616,10 @@ class AbstractGremlinProxy(BaseProxy):
         :param badges: A list of badges of a table, column, or type_metadata
         :return: a list of Badge objects
         """
-        _badges = []
-        for badge in badges:
-            _badges.append(Badge(badge_name=badge["key"], category=badge["category"]))
-        return _badges
+        return [
+            Badge(badge_name=badge["key"], category=badge["category"])
+            for badge in badges
+        ]
 
     def _get_dashboard_vertex(self,
                               dashboard_uri: str,
@@ -1662,8 +1652,9 @@ class AbstractGremlinProxy(BaseProxy):
         :return: Tuple of 4 String
         """
         dashboard_group_query = self.g.V().has("key", dashboard_uri).out("DASHBOARD_OF").valueMap().by(__.unfold())
-        dashboard_group = self.query_executor()(query=dashboard_group_query, get=FromResultSet.toList)
-        if dashboard_group:
+        if dashboard_group := self.query_executor()(
+            query=dashboard_group_query, get=FromResultSet.toList
+        ):
             dashboard_group_name = dashboard_group[0].get("name", "")
             dashboard_group_url = dashboard_group[0].get("dashboard_group_url", "")
         else:
@@ -1672,8 +1663,9 @@ class AbstractGremlinProxy(BaseProxy):
 
         dashboard_cluster_query = self.g.V().has("key", dashboard_uri).out("DASHBOARD_OF")
         dashboard_cluster_query = dashboard_cluster_query.out("DASHBOARD_GROUP_OF").valueMap().by(__.unfold())
-        dashboard_cluster = self.query_executor()(query=dashboard_cluster_query, get=FromResultSet.toList)
-        if dashboard_cluster:
+        if dashboard_cluster := self.query_executor()(
+            query=dashboard_cluster_query, get=FromResultSet.toList
+        ):
             cluster_name = dashboard_cluster[0].get("name", "")
             product_name = dashboard_cluster[0].get("key", "").split("_")[0]
         else:
@@ -1702,8 +1694,9 @@ class AbstractGremlinProxy(BaseProxy):
             table_schema = tabe_base.split("/")[0]
             table_desc_vertex_q = self.g.V(table[T.id]).out("DESCRIPTION")
             table_desc_vertex_q = table_desc_vertex_q.filter(__.hasLabel("Description")).valueMap().by(__.unfold())
-            table_desc_vertex = self.query_executor()(query=table_desc_vertex_q, get=FromResultSet.toList)
-            if table_desc_vertex:
+            if table_desc_vertex := self.query_executor()(
+                query=table_desc_vertex_q, get=FromResultSet.toList
+            ):
                 for desc in table_desc_vertex:
                     table_desc = desc.get('description')
             else:
@@ -1724,15 +1717,16 @@ class AbstractGremlinProxy(BaseProxy):
         :return: The DashboardDetailEntity object
         '''
         dashboard_uri, dashboard_url, dashboard_name, dashboard_created_timestamp = \
-            self._get_dashboard_vertex(dashboard_uri)
+                self._get_dashboard_vertex(dashboard_uri)
 
         dashboard_group_name, dashboard_group_url, cluster_name, product_name = \
-            self._get_dashboard_group_and_cluster(dashboard_uri)
+                self._get_dashboard_group_and_cluster(dashboard_uri)
 
         dashboard_desc_query = self.g.V().has("key", dashboard_uri).out("DESCRIPTION")
         dashboard_desc_query = dashboard_desc_query.valueMap().by(__.unfold())
-        dashboard_desc = self.query_executor()(query=dashboard_desc_query, get=FromResultSet.toList)
-        if dashboard_desc:
+        if dashboard_desc := self.query_executor()(
+            query=dashboard_desc_query, get=FromResultSet.toList
+        ):
             dashboard_description = dashboard_desc[0].get("description", "")
         else:
             dashboard_description = ""
@@ -1787,12 +1781,9 @@ class AbstractGremlinProxy(BaseProxy):
         for last_update in dashboard_last_update:
             updated_timestamp = int(last_update.get("timestamp"))
 
-        view_count = 0
         dashboard_view_count = self.g.V().has("key", dashboard_uri).outE("READ_BY").valueMap().by(__.unfold())
         dashboard_view_count = self.query_executor()(query=dashboard_view_count, get=FromResultSet.toList)
-        for view in dashboard_view_count:
-            view_count += view.get("read_count")
-
+        view_count = sum(view.get("read_count") for view in dashboard_view_count)
         return DashboardDetailEntity(uri=dashboard_uri,
                                      cluster=cluster_name,
                                      url=dashboard_url,

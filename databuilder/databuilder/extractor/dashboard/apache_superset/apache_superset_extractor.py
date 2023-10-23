@@ -68,9 +68,7 @@ class ApacheSupersetBaseExtractor(Extractor):
 
     def extract(self) -> Any:
         try:
-            result = next(self._extract_iter)
-
-            return result
+            return next(self._extract_iter)
         except StopIteration:
             return None
 
@@ -89,12 +87,11 @@ class ApacheSupersetBaseExtractor(Extractor):
         try:
             data = requests.get(url, params=params, headers={'Authorization': f'Bearer {self.token}'})
 
-            if data.status_code == 401:
-                self.authenticate()
-
-                return self.execute_query(url, params)
-            else:
+            if data.status_code != 401:
                 return data.json()
+            self.authenticate()
+
+            return self.execute_query(url, params)
         except Exception:
             return {}
 
@@ -176,9 +173,7 @@ class ApacheSupersetBaseExtractor(Extractor):
 
             data = self.execute_query(url)
 
-            ids = data.get('ids', [])
-
-            if ids:
+            if ids := data.get('ids', []):
                 result += ids
                 i += 1
             else:

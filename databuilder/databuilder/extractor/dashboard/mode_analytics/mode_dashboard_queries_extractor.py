@@ -68,10 +68,7 @@ class ModeDashboardQueriesExtractor(Extractor):
 
     def extract(self) -> Any:
         record = self._extractor.extract()
-        if not record:
-            return None
-
-        return self._transformer.transform(record=record)
+        return None if not record else self._transformer.transform(record=record)
 
     def get_scope(self) -> str:
         return 'extractor.mode_dashboard_query'
@@ -92,9 +89,13 @@ class ModeDashboardQueriesExtractor(Extractor):
         field_names = ['dashboard_id', 'dashboard_group_id', 'query_id', 'query_name', 'query_text']
         max_record_size = 1000
         pagination_json_path = 'queries[*]'
-        query_names_query = ModePaginatedRestApiQuery(query_to_join=seed_query, url=url, params=params,
-                                                      json_path=json_path, field_names=field_names,
-                                                      skip_no_result=True, max_record_size=max_record_size,
-                                                      pagination_json_path=pagination_json_path)
-
-        return query_names_query
+        return ModePaginatedRestApiQuery(
+            query_to_join=seed_query,
+            url=url,
+            params=params,
+            json_path=json_path,
+            field_names=field_names,
+            skip_no_result=True,
+            max_record_size=max_record_size,
+            pagination_json_path=pagination_json_path,
+        )

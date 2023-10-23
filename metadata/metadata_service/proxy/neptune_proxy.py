@@ -65,18 +65,18 @@ class NeptuneGremlinProxy(AbstractGremlinProxy):
         if port is not None:
             raise NotImplementedError(f'port is not allowed! port={port}')
 
-        # for IAM auth, we need the triplet or a Session which is more general
-        if isinstance(password, boto3.session.Session):
-            session = password
-            self.aws_auth = AssumeRoleAWS4Auth(session.get_credentials(), session.region_name, 'neptune-db')
-        else:
-            raise NotImplementedError(f'to use authentication, pass a boto3.session.Session!)')
+        if not isinstance(password, boto3.session.Session):
+            raise NotImplementedError(
+                'to use authentication, pass a boto3.session.Session!)'
+            )
 
+        session = password
+        self.aws_auth = AssumeRoleAWS4Auth(session.get_credentials(), session.region_name, 'neptune-db')
         if isinstance(host, str):
             # usually a wss URI
             url = urlsplit(host)
             assert url.scheme in ('wss', 'ws') and url.path == '/gremlin' and not url.query and not url.fragment, \
-                f'url is not a Neptune ws url?: {host}'
+                    f'url is not a Neptune ws url?: {host}'
 
             self.endpoints = Endpoints(
                 neptune_endpoint=url.hostname, neptune_port=url.port,
@@ -85,18 +85,19 @@ class NeptuneGremlinProxy(AbstractGremlinProxy):
         elif isinstance(host, Mapping):
             # ...but development is a little complicated
             assert all(k in host for k in ('neptune_endpoint', 'neptune_port', 'uri')), \
-                f'pass a dict with neptune_endpoint, neptune_port, and uri not: {host}'
+                    f'pass a dict with neptune_endpoint, neptune_port, and uri not: {host}'
 
             self.endpoints = Endpoints(
                 neptune_endpoint=host['neptune_endpoint'], neptune_port=int(host['neptune_port']),
                 region_name=session.region_name, credentials=session.get_credentials())
             uri = urlsplit(host['uri'])
             assert uri.scheme in ('wss', 'ws') and uri.path == '/gremlin' and not uri.query and not uri.fragment, \
-                f'''url is not a Neptune ws url?: {host['uri']}'''
+                    f'''url is not a Neptune ws url?: {host['uri']}'''
             self.override_uri = uri
         else:
-            raise NotImplementedError(f'to use authentication, pass a Mapping with aws_access_key_id, '
-                                      f'aws_secret_access_key, service_region!')
+            raise NotImplementedError(
+                'to use authentication, pass a Mapping with aws_access_key_id, aws_secret_access_key, service_region!'
+            )
 
         # always g for Neptune
         driver_remote_connection_options.update(traversal_source='g')
@@ -104,7 +105,7 @@ class NeptuneGremlinProxy(AbstractGremlinProxy):
         try:
             s3_bucket_name = client_kwargs['neptune_bulk_loader_s3_bucket_name']  # noqa: E731
         except Exception:
-            raise NotImplementedError(f'Cannot find s3 bucket name!')
+            raise NotImplementedError('Cannot find s3 bucket name!')
 
         # Get custom sts endpoint, default None
         sts_endpoint = client_kwargs['sts_endpoint']
@@ -215,13 +216,27 @@ class NeptuneGremlinProxy(AbstractGremlinProxy):
         # sufficient headers so we'll use requests for these since we can
         url = urlsplit(self.endpoints.gremlin_endpoint().prepare_request().uri)
         assert url.scheme in ('wss', 'ws') and url.path == '/gremlin' and not url.query and not url.fragment, \
-            f'url is not a Neptune ws url?: {url}'
+                f'url is not a Neptune ws url?: {url}'
         _explain_url = urlunsplit(
-            ('https' if url.scheme == 'wss' else 'http', url.netloc, url.path + '/explain', '', ''))
+            (
+                'https' if url.scheme == 'wss' else 'http',
+                url.netloc,
+                f'{url.path}/explain',
+                '',
+                '',
+            )
+        )
         host = to_aws4_request_compatible_host(_explain_url)
         if self.override_uri:
             _explain_url = urlunsplit(
-                ('https' if url.scheme == 'wss' else 'http', self.override_uri.netloc, url.path + '/explain', '', ''))
+                (
+                    'https' if url.scheme == 'wss' else 'http',
+                    self.override_uri.netloc,
+                    f'{url.path}/explain',
+                    '',
+                    '',
+                )
+            )
         s = requests.Session()
         s.mount('https://', HostHeaderSSLAdapter())
         response = s.post(_explain_url, auth=self.aws_auth,
@@ -242,13 +257,27 @@ class NeptuneGremlinProxy(AbstractGremlinProxy):
         # sufficient headers so we'll use requests for these since we can
         url = urlsplit(self.endpoints.gremlin_endpoint().prepare_request().uri)
         assert url.scheme in ('wss', 'ws') and url.path == '/gremlin' and not url.query and not url.fragment, \
-            f'url is not a Neptune ws url?: {url}'
+                f'url is not a Neptune ws url?: {url}'
         _profile_url = urlunsplit(
-            ('https' if url.scheme == 'wss' else 'http', url.netloc, url.path + '/profile', '', ''))
+            (
+                'https' if url.scheme == 'wss' else 'http',
+                url.netloc,
+                f'{url.path}/profile',
+                '',
+                '',
+            )
+        )
         host = to_aws4_request_compatible_host(_profile_url)
         if self.override_uri:
             _profile_url = urlunsplit(
-                ('https' if url.scheme == 'wss' else 'http', self.override_uri.netloc, url.path + '/profile', '', ''))
+                (
+                    'https' if url.scheme == 'wss' else 'http',
+                    self.override_uri.netloc,
+                    f'{url.path}/profile',
+                    '',
+                    '',
+                )
+            )
         s = requests.Session()
         s.mount('https://', HostHeaderSSLAdapter())
         response = s.post(_profile_url, auth=self.aws_auth,

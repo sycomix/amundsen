@@ -197,10 +197,7 @@ class ArrayTypeMetadata(TypeMetadata):
             badge_metadata = BadgeMetadata(start_label=TypeMetadata.NODE_LABEL,
                                            start_key=self.key(),
                                            badges=self._badges)
-            badge_nodes = badge_metadata.get_badge_nodes()
-            for node in badge_nodes:
-                yield node
-
+            yield from badge_metadata.get_badge_nodes()
         if not self.is_terminal_type():
             assert self.array_inner_type is not None, f"Array inner type must be set for {self.name}"
             yield from self.array_inner_type.create_node_iterator()
@@ -229,10 +226,7 @@ class ArrayTypeMetadata(TypeMetadata):
             badge_metadata = BadgeMetadata(start_label=TypeMetadata.NODE_LABEL,
                                            start_key=self.key(),
                                            badges=self._badges)
-            badge_relations = badge_metadata.get_badge_relations()
-            for relation in badge_relations:
-                yield relation
-
+            yield from badge_metadata.get_badge_relations()
         if not self.is_terminal_type():
             assert self.array_inner_type is not None, f"Array inner type must be set for {self.name}"
             yield from self.array_inner_type.create_relation_iterator()
@@ -286,10 +280,7 @@ class MapTypeMetadata(TypeMetadata):
             badge_metadata = BadgeMetadata(start_label=TypeMetadata.NODE_LABEL,
                                            start_key=self.key(),
                                            badges=self._badges)
-            badge_nodes = badge_metadata.get_badge_nodes()
-            for node in badge_nodes:
-                yield node
-
+            yield from badge_metadata.get_badge_nodes()
         if not self.is_terminal_type():
             assert self.map_key_type is not None, f"Map key type must be set for {self.name}"
             assert self.map_value_type is not None, f"Map value type must be set for {self.name}"
@@ -320,10 +311,7 @@ class MapTypeMetadata(TypeMetadata):
             badge_metadata = BadgeMetadata(start_label=TypeMetadata.NODE_LABEL,
                                            start_key=self.key(),
                                            badges=self._badges)
-            badge_relations = badge_metadata.get_badge_relations()
-            for relation in badge_relations:
-                yield relation
-
+            yield from badge_metadata.get_badge_relations()
         if not self.is_terminal_type():
             assert self.map_key_type is not None, f"Map key type must be set for {self.name}"
             assert self.map_value_type is not None, f"Map value type must be set for {self.name}"
@@ -380,9 +368,7 @@ class ScalarTypeMetadata(TypeMetadata):
             badge_metadata = BadgeMetadata(start_label=TypeMetadata.NODE_LABEL,
                                            start_key=self.key(),
                                            badges=self._badges)
-            badge_nodes = badge_metadata.get_badge_nodes()
-            for node in badge_nodes:
-                yield node
+            yield from badge_metadata.get_badge_nodes()
 
     def create_relation_iterator(self) -> Iterator[GraphRelationship]:
         yield GraphRelationship(
@@ -408,9 +394,7 @@ class ScalarTypeMetadata(TypeMetadata):
             badge_metadata = BadgeMetadata(start_label=TypeMetadata.NODE_LABEL,
                                            start_key=self.key(),
                                            badges=self._badges)
-            badge_relations = badge_metadata.get_badge_relations()
-            for relation in badge_relations:
-                yield relation
+            yield from badge_metadata.get_badge_relations()
 
 
 class StructTypeMetadata(TypeMetadata):
@@ -459,10 +443,7 @@ class StructTypeMetadata(TypeMetadata):
             badge_metadata = BadgeMetadata(start_label=TypeMetadata.NODE_LABEL,
                                            start_key=self.key(),
                                            badges=self._badges)
-            badge_nodes = badge_metadata.get_badge_nodes()
-            for node in badge_nodes:
-                yield node
-
+            yield from badge_metadata.get_badge_nodes()
         if not self.is_terminal_type():
             assert self.struct_items, f"Struct items must be set for {self.name}"
             for name, data_type in self.struct_items.items():
@@ -492,10 +473,7 @@ class StructTypeMetadata(TypeMetadata):
             badge_metadata = BadgeMetadata(start_label=TypeMetadata.NODE_LABEL,
                                            start_key=self.key(),
                                            badges=self._badges)
-            badge_relations = badge_metadata.get_badge_relations()
-            for relation in badge_relations:
-                yield relation
-
+            yield from badge_metadata.get_badge_relations()
         if not self.is_terminal_type():
             assert self.struct_items, f"Struct items must be set for {self.name}"
             for name, data_type in self.struct_items.items():

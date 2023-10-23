@@ -39,7 +39,7 @@ def get_table_quality_checks_summary() -> Response:
         payload = jsonify({'checks': {}, 'msg': 'A client for retrieving quality checks must be configured'})
         return make_response(payload, HTTPStatus.NOT_IMPLEMENTED)
     except Exception as e:
-        message = 'Encountered exception: ' + str(e)
+        message = f'Encountered exception: {str(e)}'
         logging.exception(message)
         payload = jsonify({'checks': {}, 'msg': message})
         return make_response(payload, HTTPStatus.INTERNAL_SERVER_ERROR)
@@ -55,10 +55,10 @@ def _get_dq_checks_summary_client() -> Response:
             quality_checks = json.loads(response.data).get('checks')
             payload = jsonify({'checks': quality_checks, 'msg': 'Success'})
         except ValidationError as err:
-            logging.error('Quality data dump returned errors: ' + str(err.messages))
+            logging.error(f'Quality data dump returned errors: {str(err.messages)}')
             raise Exception('The preview client did not return a valid Quality Checks object')
     else:
-        message = 'Encountered error: Quality client request failed with code ' + str(status_code)
+        message = f'Encountered error: Quality client request failed with code {str(status_code)}'
         logging.error(message)
         # only necessary to pass the error text
         payload = jsonify({'checks': {}, 'msg': message})

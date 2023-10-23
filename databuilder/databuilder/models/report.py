@@ -74,33 +74,29 @@ class ResourceReport(GraphSerializable, AtlasSerializable):
         Create an application node
         :return:
         """
-        report_node = GraphNode(
+        yield GraphNode(
             key=self.resource_report_key,
             label=ResourceReport.RESOURCE_REPORT_LABEL,
             attributes={
                 ResourceReport.RESOURCE_REPORT_NAME: self.report_name,
-                ResourceReport.RESOURCE_REPORT_URL: self.report_url
-            }
+                ResourceReport.RESOURCE_REPORT_URL: self.report_url,
+            },
         )
-
-        yield report_node
 
     def _create_relation_iterator(self) -> Iterator[GraphRelationship]:
         """
         Create relations between application and table nodes
         :return:
         """
-        graph_relationship = GraphRelationship(
+        yield GraphRelationship(
             start_key=self.resource_uri,
             start_label=self.resource_label,
             end_key=self.resource_report_key,
             end_label=ResourceReport.RESOURCE_REPORT_LABEL,
             type=ResourceReport.RESOURCE_REPORT_RELATION_TYPE,
             reverse_type=ResourceReport.REPORT_RESOURCE_RELATION_TYPE,
-            attributes={}
+            attributes={},
         )
-
-        yield graph_relationship
 
     def create_next_atlas_entity(self) -> Union[AtlasEntity, None]:
         try:
@@ -117,14 +113,12 @@ class ResourceReport(GraphSerializable, AtlasSerializable):
 
         entity_attrs = get_entity_attrs(group_attrs_mapping)
 
-        entity = AtlasEntity(
+        yield AtlasEntity(
             typeName=AtlasCommonTypes.resource_report,
             operation=AtlasSerializedEntityOperation.CREATE,
             relationships=None,
             attributes=entity_attrs,
         )
-
-        yield entity
 
     def create_next_atlas_relation(self) -> Union[AtlasRelationship, None]:
         try:
@@ -133,13 +127,11 @@ class ResourceReport(GraphSerializable, AtlasSerializable):
             return None
 
     def _create_atlas_relation_iterator(self) -> Iterator[AtlasRelationship]:
-        relationship = AtlasRelationship(
+        yield AtlasRelationship(
             relationshipType=AtlasRelationshipTypes.referenceable_report,
             entityType1=self.resource_label,
             entityQualifiedName1=self.resource_uri,
             entityType2=AtlasCommonTypes.resource_report,
             entityQualifiedName2=self.resource_report_key,
-            attributes={}
+            attributes={},
         )
-
-        yield relationship

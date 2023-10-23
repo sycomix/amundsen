@@ -87,7 +87,7 @@ def search() -> Response:
                                          search_type=search_type)
         return make_response(jsonify(results_dict), results_dict.get('status_code', HTTPStatus.OK))
     except Exception as e:
-        message = 'Encountered exception: ' + str(e)
+        message = f'Encountered exception: {str(e)}'
         LOGGER.exception(message)
         return make_response(jsonify(results_dict), HTTPStatus.INTERNAL_SERVER_ERROR)
 
@@ -104,11 +104,7 @@ def _search_resources(*, search_term: str,
     Call the search service endpoint and return matching results
     :return: a json output containing search results array as 'results'
     """
-    default_results = {
-        'page_index': int(page_index),
-        'results': [],
-        'total_results': 0,
-    }
+    default_results = {'page_index': page_index, 'results': [], 'total_results': 0}
 
     results_dict = {
         'search_term': search_term,
@@ -141,8 +137,11 @@ def _search_resources(*, search_term: str,
             results = search_response.results
             for resource in results.keys():
                 results_dict[resource] = {
-                    'page_index': int(page_index),
-                    'results': [RESOURCE_TO_MAPPING[resource](result) for result in results[resource]['results']],
+                    'page_index': page_index,
+                    'results': [
+                        RESOURCE_TO_MAPPING[resource](result)
+                        for result in results[resource]['results']
+                    ],
                     'total_results': results[resource]['total_results'],
                 }
         else:

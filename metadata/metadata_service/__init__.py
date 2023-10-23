@@ -97,12 +97,10 @@ def create_app(*, config_module_class: str) -> Flask:
     else:
         logging.basicConfig(format=app.config.get('LOG_FORMAT'), datefmt=app.config.get('LOG_DATE_FORMAT'))
         logging.getLogger().setLevel(app.config.get('LOG_LEVEL'))
-    logging.info('Created app with config name {}'.format(config_module_class))
-    logging.info('Using backend {}'.format(app.config.get('PROXY_CLIENT')))
+    logging.info(f'Created app with config name {config_module_class}')
+    logging.info(f"Using backend {app.config.get('PROXY_CLIENT')}")
 
-    # Initialize custom extensions and routes
-    init_custom_ext_routes = app.config.get('INIT_CUSTOM_EXT_AND_ROUTES')
-    if init_custom_ext_routes:
+    if init_custom_ext_routes := app.config.get('INIT_CUSTOM_EXT_AND_ROUTES'):
         init_custom_ext_routes(app)
 
     api_bp = Blueprint('api', __name__)
@@ -188,11 +186,9 @@ def create_app(*, config_module_class: str) -> Flask:
                      '/feature/<path:feature_uri>/generation_code')
     app.register_blueprint(api_bp)
 
-    # cli registration
-    proxy_cli = app.config.get('PROXY_CLI')
-    if proxy_cli:
+    if proxy_cli := app.config.get('PROXY_CLI'):
         app.cli.add_command(import_string(proxy_cli))
-        logging.info('Using cli {}'.format(proxy_cli))
+        logging.info(f'Using cli {proxy_cli}')
 
     if app.config.get('SWAGGER_ENABLED'):
         Swagger(app, template_file=os.path.join(ROOT_DIR, app.config.get('SWAGGER_TEMPLATE_PATH')), parse=True)

@@ -20,7 +20,7 @@ DEFAULT_REPORT_URL_TEMPLATE = 'https://app.mode.com/api/{organization}/reports/{
 
 def _validate_not_none(var: Any, var_name: str) -> Any:
     if not var:
-        raise ValueError('{} is missing'.format(var_name))
+        raise ValueError(f'{var_name} is missing')
     return var
 
 
@@ -78,10 +78,12 @@ class ModePreview(BasePreview):
     def _get_preview_image_url(self, *, uri: str) -> str:
         url = self._report_url_template.format(organization=self._organization, dashboard_id=uri.split('/')[-1])
 
-        LOGGER.info('Calling URL {} to fetch preview image URL'.format(url))
+        LOGGER.info(f'Calling URL {url} to fetch preview image URL')
         response = requests.get(url, auth=HTTPBasicAuth(self._access_token, self._password))
         if response.status_code == 404:
-            raise FileNotFoundError('Dashboard {} not found. Possibly has been deleted.'.format(uri))
+            raise FileNotFoundError(
+                f'Dashboard {uri} not found. Possibly has been deleted.'
+            )
 
         response.raise_for_status()
 
@@ -89,11 +91,11 @@ class ModePreview(BasePreview):
         result = response.json()
 
         if web_preview_image_key not in result:
-            raise FileNotFoundError('No preview image available on {}'.format(uri))
+            raise FileNotFoundError(f'No preview image available on {uri}')
 
         image_url = result[web_preview_image_key]
         if image_url is None:
-            raise FileNotFoundError('No preview image available on {}'.format(uri))
+            raise FileNotFoundError(f'No preview image available on {uri}')
 
         return image_url
 
@@ -116,4 +118,6 @@ class ModePreview(BasePreview):
         if user.is_active and user.other_key_values and user.other_key_values.get('mode_user_id'):
             return
 
-        raise PermissionError('User {} is not authorized to preview Mode Dashboard'.format(user_id))
+        raise PermissionError(
+            f'User {user_id} is not authorized to preview Mode Dashboard'
+        )

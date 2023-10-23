@@ -95,11 +95,10 @@ def is_table_editable(schema_name: str, table_name: str, cfg: Any = None) -> boo
     if schema_name in cfg['UNEDITABLE_SCHEMAS']:
         return False
 
-    for rule in cfg['UNEDITABLE_TABLE_DESCRIPTION_MATCH_RULES']:
-        if not _parse_editable_rule(rule, schema_name, table_name):
-            return False
-
-    return True
+    return all(
+        _parse_editable_rule(rule, schema_name, table_name)
+        for rule in cfg['UNEDITABLE_TABLE_DESCRIPTION_MATCH_RULES']
+    )
 
 
 def _recursive_set_type_metadata_is_editable(type_metadata: Optional[TypeMetadata], is_editable: bool) -> None:
@@ -212,18 +211,14 @@ def _convert_prog_descriptions(prog_descriptions: List = None) -> Dict:
     left = []  # type: List
     right = []  # type: List
     other = prog_descriptions or []  # type: List
-    updated_descriptions = {}
-
     if prog_descriptions:
         # We want to make sure there is a display title that is just source
         for desc in prog_descriptions:
             source = desc.get('source')
             if not source:
-                logging.warning("no source found in: " + str(desc))
+                logging.warning(f"no source found in: {str(desc)}")
 
-        # If config is defined for programmatic disply we organize and sort them based on the configuration
-        prog_display_config = app.config['PROGRAMMATIC_DISPLAY']
-        if prog_display_config:
+        if prog_display_config := app.config['PROGRAMMATIC_DISPLAY']:
             left_config = prog_display_config.get('LEFT', {})
             left = [x for x in prog_descriptions if x.get('source') in left_config]
             left.sort(key=lambda x: _sort_prog_descriptions(left_config, x))
@@ -237,17 +232,13 @@ def _convert_prog_descriptions(prog_descriptions: List = None) -> Dict:
                                 not in right_config, prog_descriptions))
             other.sort(key=lambda x: _sort_prog_descriptions(other_config, x))
 
-    updated_descriptions['left'] = left
-    updated_descriptions['right'] = right
-    updated_descriptions['other'] = other
-    return updated_descriptions
+    return {'left': left, 'right': right, 'other': other}
 
 
 def _sort_prog_descriptions(base_config: Dict, prog_description: Dict) -> int:
     default_order = len(base_config)
     prog_description_source = prog_description.get('source')
-    config_dict = base_config.get(prog_description_source)
-    if config_dict:
+    if config_dict := base_config.get(prog_description_source):
         return config_dict.get('display_order', default_order)
     return default_order
 
@@ -258,8 +249,11 @@ def _map_user_object_to_schema(u: Dict) -> Dict:
 
 def _get_partition_data(watermarks: Dict) -> Dict:
     if watermarks:
-        high_watermark = next(filter(lambda x: x['watermark_type'] == 'high_watermark', watermarks))
-        if high_watermark:
+        if high_watermark := next(
+            filter(
+                lambda x: x['watermark_type'] == 'high_watermark', watermarks
+            )
+        ):
             return {
                 'is_partitioned': True,
                 'key': high_watermark['partition_key'],

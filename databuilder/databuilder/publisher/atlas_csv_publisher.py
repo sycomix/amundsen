@@ -221,8 +221,9 @@ class AtlasCSVPublisher(Publisher):
         type_name = {AtlasCommonParams.type_name: entity_dict[AtlasCommonParams.type_name]}
         entity = AtlasEntity(type_name)
         entity.attributes = entity_dict
-        relationships = entity_dict.get(AtlasSerializedEntityFields.relationships)
-        if relationships:
+        if relationships := entity_dict.get(
+            AtlasSerializedEntityFields.relationships
+        ):
             relations = {}
             for relation_attr, rel_type, rel_qn in self._extract_entity_relations_details(relationships):
                 related_obj = self._get_atlas_related_object_id_by_qn(rel_type, rel_qn)
@@ -318,13 +319,15 @@ class AtlasCSVPublisher(Publisher):
         name = classification_spec.get('category') if super_type else classification_spec.get('name')
         sub_types = [classification_spec.get('category')] if not super_type else []
 
-        result = AtlasClassificationDef(attrs=dict(name=name,
-                                                   attributeDefs=[],
-                                                   subTypes=sub_types,
-                                                   superTypes=[],
-                                                   entityTypes=[]))
-
-        return result
+        return AtlasClassificationDef(
+            attrs=dict(
+                name=name,
+                attributeDefs=[],
+                subTypes=sub_types,
+                superTypes=[],
+                entityTypes=[],
+            )
+        )
 
     def _create_classifications(self, classifications: List[Dict]) -> None:
         _st = set()

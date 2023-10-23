@@ -36,7 +36,9 @@ class TableDetailAPI(Resource):
             return schema.dump(table), HTTPStatus.OK
 
         except NotFoundException:
-            return {'message': 'table_uri {} does not exist'.format(table_uri)}, HTTPStatus.NOT_FOUND
+            return {
+                'message': f'table_uri {table_uri} does not exist'
+            }, HTTPStatus.NOT_FOUND
 
 
 class TableLineageAPI(Resource):
@@ -75,25 +77,25 @@ class TableOwnerAPI(Resource):
     def put(self, table_uri: str, owner: str) -> Iterable[Union[Mapping, int, None]]:
         try:
             self.client.add_owner(table_uri=table_uri, owner=owner)
-            return {'message': 'The owner {} for table_uri {} '
-                               'is added successfully'.format(owner,
-                                                              table_uri)}, HTTPStatus.OK
+            return {
+                'message': f'The owner {owner} for table_uri {table_uri} is added successfully'
+            }, HTTPStatus.OK
         except Exception:
-            return {'message': 'The owner {} for table_uri {} '
-                               'is not added successfully'.format(owner,
-                                                                  table_uri)}, HTTPStatus.INTERNAL_SERVER_ERROR
+            return {
+                'message': f'The owner {owner} for table_uri {table_uri} is not added successfully'
+            }, HTTPStatus.INTERNAL_SERVER_ERROR
 
     @swag_from('swagger_doc/table/owner_delete.yml')
     def delete(self, table_uri: str, owner: str) -> Iterable[Union[Mapping, int, None]]:
         try:
             self.client.delete_owner(table_uri=table_uri, owner=owner)
-            return {'message': 'The owner {} for table_uri {} '
-                               'is deleted successfully'.format(owner,
-                                                                table_uri)}, HTTPStatus.OK
+            return {
+                'message': f'The owner {owner} for table_uri {table_uri} is deleted successfully'
+            }, HTTPStatus.OK
         except Exception:
-            return {'message': 'The owner {} for table_uri {} '
-                               'is not deleted successfully'.format(owner,
-                                                                    table_uri)}, HTTPStatus.INTERNAL_SERVER_ERROR
+            return {
+                'message': f'The owner {owner} for table_uri {table_uri} is not deleted successfully'
+            }, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 class TableDescriptionAPI(Resource):
@@ -115,7 +117,7 @@ class TableDescriptionAPI(Resource):
             return {'description': description}, HTTPStatus.OK
 
         except NotFoundException:
-            return {'message': 'table_uri {} does not exist'.format(id)}, HTTPStatus.NOT_FOUND
+            return {'message': f'table_uri {id} does not exist'}, HTTPStatus.NOT_FOUND
 
         except Exception:
             return {'message': 'Internal server error!'}, HTTPStatus.INTERNAL_SERVER_ERROR
@@ -133,7 +135,7 @@ class TableDescriptionAPI(Resource):
             return None, HTTPStatus.OK
 
         except NotFoundException:
-            return {'message': 'table_uri {} does not exist'.format(id)}, HTTPStatus.NOT_FOUND
+            return {'message': f'table_uri {id} does not exist'}, HTTPStatus.NOT_FOUND
 
 
 class TableTagAPI(Resource):
@@ -235,4 +237,4 @@ class TableDashboardAPI(BaseAPI):
         try:
             return super().get_with_kwargs(id=id, resource_type=ResourceType.Dashboard)
         except NotFoundException:
-            return {'message': 'table_id {} does not exist'.format(id)}, HTTPStatus.NOT_FOUND
+            return {'message': f'table_id {id} does not exist'}, HTTPStatus.NOT_FOUND

@@ -102,46 +102,43 @@ class Watermark(GraphSerializable, TableSerializable, AtlasSerializable):
         :return:
         """
         for part in self.parts:
-            part_node = GraphNode(
+            yield GraphNode(
                 key=self.get_watermark_model_key(),
                 label=Watermark.LABEL,
                 attributes={
                     'partition_key': part[0],
                     'partition_value': part[1],
-                    'create_time': self.create_time
-                }
+                    'create_time': self.create_time,
+                },
             )
-            yield part_node
 
     def _create_relation_iterator(self) -> Iterator[GraphRelationship]:
         """
         Create relation map between watermark record with original table
         :return:
         """
-        relation = GraphRelationship(
+        yield GraphRelationship(
             start_key=self.get_watermark_model_key(),
             start_label=Watermark.LABEL,
             end_key=self.get_metadata_model_key(),
             end_label='Table',
             type=Watermark.WATERMARK_TABLE_RELATION_TYPE,
             reverse_type=Watermark.TABLE_WATERMARK_RELATION_TYPE,
-            attributes={}
+            attributes={},
         )
-        yield relation
 
     def _create_next_record(self) -> Iterator[RDSModel]:
         """
         Create watermark records
         """
         for part in self.parts:
-            part_record = RDSTableWatermark(
+            yield RDSTableWatermark(
                 rk=self.get_watermark_model_key(),
                 partition_key=part[0],
                 partition_value=part[1],
                 create_time=self.create_time,
-                table_rk=self.get_metadata_model_key()
+                table_rk=self.get_metadata_model_key(),
             )
-            yield part_record
 
     def _create_atlas_partition_entity(self, spec: Tuple[str, str]) -> AtlasEntity:
         attrs_mapping = [
@@ -163,14 +160,12 @@ class Watermark(GraphSerializable, TableSerializable, AtlasSerializable):
             self.get_metadata_model_key()
         )
 
-        entity = AtlasEntity(
+        return AtlasEntity(
             typeName=AtlasTableTypes.watermark,
             operation=AtlasSerializedEntityOperation.CREATE,
             attributes=entity_attrs,
-            relationships=get_entity_relationships(relationship_list)
+            relationships=get_entity_relationships(relationship_list),
         )
-
-        return entity
 
     def create_next_atlas_relation(self) -> Union[AtlasRelationship, None]:
         pass

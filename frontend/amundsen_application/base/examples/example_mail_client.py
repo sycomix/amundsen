@@ -56,7 +56,7 @@ class MailClient(BaseMailClient):
             s.quit()
             return make_response(payload, HTTPStatus.OK)
         except Exception as e:
-            err_message = 'Encountered exception: ' + str(e)
+            err_message = f'Encountered exception: {str(e)}'
             logging.exception(err_message)
             payload = jsonify({'msg': err_message})
             s.quit()

@@ -118,18 +118,23 @@ class GenericApplication(GraphSerializable, TableSerializable, AtlasSerializable
         Create relations between application and table nodes
         :return:
         """
-        graph_relationship = GraphRelationship(
+        yield GraphRelationship(
             start_key=self.start_key,
             start_label=self.start_label,
             end_key=self.application_key,
             end_label=GenericApplication.LABEL,
-            type=(GenericApplication.DERIVED_FROM_REL_TYPE if self.generates_resource
-                  else GenericApplication.CONSUMED_BY_REL_TYPE),
-            reverse_type=(GenericApplication.GENERATES_REL_TYPE if self.generates_resource
-                          else GenericApplication.CONSUMES_REL_TYPE),
-            attributes={}
+            type=(
+                GenericApplication.DERIVED_FROM_REL_TYPE
+                if self.generates_resource
+                else GenericApplication.CONSUMED_BY_REL_TYPE
+            ),
+            reverse_type=(
+                GenericApplication.GENERATES_REL_TYPE
+                if self.generates_resource
+                else GenericApplication.CONSUMES_REL_TYPE
+            ),
+            attributes={},
         )
-        yield graph_relationship
 
     # TODO: support consuming/producing relationships and multiple apps per resource
     def _create_record_iterator(self) -> Iterator[RDSModel]:
@@ -163,14 +168,12 @@ class GenericApplication(GraphSerializable, TableSerializable, AtlasSerializable
 
         entity_attrs = get_entity_attrs(group_attrs_mapping)
 
-        entity = AtlasEntity(
+        yield AtlasEntity(
             typeName=AtlasCommonTypes.application,
             operation=AtlasSerializedEntityOperation.CREATE,
             relationships=None,
             attributes=entity_attrs,
         )
-
-        yield entity
 
     def create_next_atlas_relation(self) -> Union[AtlasRelationship, None]:
         try:

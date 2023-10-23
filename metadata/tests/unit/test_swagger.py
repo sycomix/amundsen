@@ -67,5 +67,4 @@ class TestSwagger(unittest.TestCase):
             if json_key == key:
                 yield json_value
             elif isinstance(json_value, dict):
-                for result in TestSwagger.find(key, json_value):
-                    yield result
+                yield from TestSwagger.find(key, json_value)

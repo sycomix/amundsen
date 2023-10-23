@@ -78,10 +78,7 @@ class AtlasKey(abc.ABC):
 
         :returns: -
         """
-        if self.atlas_qualified_name_regex.match(self._raw_identifier):
-            return True
-        else:
-            return False
+        return bool(self.atlas_qualified_name_regex.match(self._raw_identifier))
 
     @property
     def is_amundsen_key(self) -> bool:
@@ -90,10 +87,7 @@ class AtlasKey(abc.ABC):
 
         :returns: -
         """
-        if self.amundsen_key_regex.match(self._raw_identifier):
-            return True
-        else:
-            return False
+        return bool(self.amundsen_key_regex.match(self._raw_identifier))
 
     def get_details(self) -> Dict[str, str]:
         """
@@ -115,9 +109,7 @@ class AtlasKey(abc.ABC):
         :returns: dictionary of matched regex groups with their values
         """
         try:
-            result = pattern.match(self._raw_identifier).groupdict()
-
-            return result
+            return pattern.match(self._raw_identifier).groupdict()
         except KeyError:
             raise KeyError
 
@@ -223,16 +215,18 @@ class AtlasTableKey(AtlasKey):
 
     @property
     def qualified_name(self) -> str:
-        if not self.is_qualified_name and self.get_details()['database'] in self.native_atlas_entity_types:
-            spec = self._get_details_from_key()
-
-            schema = spec['schema']
-            table = spec['table']
-            cluster = spec['cluster']
-
-            return f'{schema}.{table}@{cluster}'
-        else:
+        if (
+            self.is_qualified_name
+            or self.get_details()['database'] not in self.native_atlas_entity_types
+        ):
             return self._raw_identifier
+        spec = self._get_details_from_key()
+
+        schema = spec['schema']
+        table = spec['table']
+        cluster = spec['cluster']
+
+        return f'{schema}.{table}@{cluster}'
 
     @property
     def amundsen_key(self) -> str:

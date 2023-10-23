@@ -88,10 +88,7 @@ class ModeDashboardExtractor(Extractor):
         while record and record.get('dashboard_group_id') in self.dashboard_group_ids_to_skip:
             record = self._extractor.extract()
 
-        if not record:
-            return None
-
-        return self._transformer.transform(record=record)
+        return None if not record else self._transformer.transform(record=record)
 
     def get_scope(self) -> str:
         return 'extractor.mode_dashboard'
@@ -115,10 +112,14 @@ class ModeDashboardExtractor(Extractor):
         spaces_query = ModeDashboardUtils.get_spaces_query_api(conf=self._conf)
         query_merger = QueryMerger(query_to_merge=spaces_query, merge_key='dashboard_group_id')
 
-        reports_query = ModePaginatedRestApiQuery(query_to_join=seed_query, url=url, params=params,
-                                                  json_path=json_path, field_names=field_names,
-                                                  skip_no_result=True, max_record_size=max_record_size,
-                                                  pagination_json_path=pagination_json_path,
-                                                  query_merger=query_merger)
-
-        return reports_query
+        return ModePaginatedRestApiQuery(
+            query_to_join=seed_query,
+            url=url,
+            params=params,
+            json_path=json_path,
+            field_names=field_names,
+            skip_no_result=True,
+            max_record_size=max_record_size,
+            pagination_json_path=pagination_json_path,
+            query_merger=query_merger,
+        )

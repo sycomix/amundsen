@@ -54,10 +54,10 @@ def get_table_preview() -> Response:
                 data = PreviewDataSchema().load(preview_data)
                 payload = jsonify({'previewData': data, 'msg': 'Success'})
             except ValidationError as err:
-                logging.error('Preview data dump returned errors: ' + str(err.messages))
+                logging.error(f'Preview data dump returned errors: {str(err.messages)}')
                 raise Exception('The preview client did not return a valid PreviewData object')
         else:
-            message = 'Encountered error: Preview client request failed with code ' + str(status_code)
+            message = f'Encountered error: Preview client request failed with code {str(status_code)}'
             logging.error(message)
             # only necessary to pass the error text
             payload = jsonify({'previewData': {'error_text': preview_data.get('error_text', '')}, 'msg': message})
@@ -97,10 +97,10 @@ def get_feature_preview() -> Response:
                 data = PreviewDataSchema().load(preview_data)
                 payload = jsonify({'previewData': data, 'msg': 'Success'})
             except ValidationError as err:
-                logging.error('Preview data dump returned errors: ' + str(err.messages))
+                logging.error(f'Preview data dump returned errors: {str(err.messages)}')
                 raise Exception('The preview client did not return a valid PreviewData object')
         else:
-            message = 'Encountered error: Preview client request failed with code ' + str(status_code)
+            message = f'Encountered error: Preview client request failed with code {str(status_code)}'
             logging.error(message)
             # only necessary to pass the error text
             payload = jsonify({'previewData': {'error_text': preview_data.get('error_text', '')}, 'msg': message})

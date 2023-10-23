@@ -27,10 +27,7 @@ class NotificationType(str, Enum):
 
     @classmethod
     def has_value(cls, value: str) -> bool:
-        for key in cls:
-            if key.value == value:
-                return True
-        return False
+        return any(key.value == value for key in cls)
 
 
 NOTIFICATION_STRINGS = {
@@ -65,17 +62,15 @@ NOTIFICATION_STRINGS = {
 }
 
 
-def get_mail_client():  # type: ignore
+def get_mail_client():    # type: ignore
     """
     Gets a mail_client object to send emails, raises an exception
     if mail client isn't implemented
     """
-    mail_client = app.config['MAIL_CLIENT']
-
-    if not mail_client:
+    if mail_client := app.config['MAIL_CLIENT']:
+        return mail_client
+    else:
         raise MailClientNotImplemented('An instance of BaseMailClient client must be configured on MAIL_CLIENT')
-
-    return mail_client
 
 
 def validate_options(*, options: Dict) -> None:
@@ -120,13 +115,13 @@ def get_notification_html(*, notification_type: str, options: Dict, sender: str)
         need_fields_descriptions = options.get('fields_requested')
 
         if need_resource_description and need_fields_descriptions:
-            notification = notification + 'and requests improved table and column descriptions.<br/>'
+            notification = f'{notification}and requests improved table and column descriptions.<br/>'
         elif need_resource_description:
-            notification = notification + 'and requests an improved table description.<br/>'
+            notification = f'{notification}and requests an improved table description.<br/>'
         elif need_fields_descriptions:
-            notification = notification + 'and requests improved column descriptions.<br/>'
+            notification = f'{notification}and requests improved column descriptions.<br/>'
         else:
-            notification = notification + 'and requests more information about that resource.<br/>'
+            notification = f'{notification}and requests more information about that resource.<br/>'
 
         if options_comment:
             comment = ('<br/>{sender} has included the following information with their request:'
@@ -153,11 +148,11 @@ def get_notification_subject(*, notification_type: str, options: Dict) -> str:
     """
     resource_name = options.get('resource_name')
     notification_subject_dict = {
-        NotificationType.OWNER_ADDED.value: 'You are now an owner of {}'.format(resource_name),
-        NotificationType.OWNER_REMOVED.value: 'You have been removed as an owner of {}'.format(resource_name),
-        NotificationType.METADATA_EDITED.value: 'Your dataset {}\'s metadata has been edited'.format(resource_name),
-        NotificationType.METADATA_REQUESTED.value: 'Request for metadata on {}'.format(resource_name),
-        NotificationType.DATA_ISSUE_REPORTED.value: 'A data issue has been reported for {}'.format(resource_name)
+        NotificationType.OWNER_ADDED.value: f'You are now an owner of {resource_name}',
+        NotificationType.OWNER_REMOVED.value: f'You have been removed as an owner of {resource_name}',
+        NotificationType.METADATA_EDITED.value: f"Your dataset {resource_name}\'s metadata has been edited",
+        NotificationType.METADATA_REQUESTED.value: f'Request for metadata on {resource_name}',
+        NotificationType.DATA_ISSUE_REPORTED.value: f'A data issue has been reported for {resource_name}',
     }
     subject = notification_subject_dict.get(notification_type)
     if subject is None:
@@ -221,15 +216,15 @@ def send_notification(*, notification_type: str, options: Dict, recipients: List
         if 200 <= status_code < 300:
             message = 'Success'
         else:
-            message = 'Mail client failed with status code ' + str(status_code)
+            message = f'Mail client failed with status code {str(status_code)}'
             logging.error(message)
 
         return make_response(jsonify({'msg': message}), status_code)
     except MailClientNotImplemented as e:
-        message = 'Encountered exception: ' + str(e)
+        message = f'Encountered exception: {str(e)}'
         logging.exception(message)
         return make_response(jsonify({'msg': message}), HTTPStatus.NOT_IMPLEMENTED)
     except Exception as e1:
-        message = 'Encountered exception: ' + str(e1)
+        message = f'Encountered exception: {str(e1)}'
         logging.exception(message)
         return make_response(jsonify({'msg': message}), HTTPStatus.INTERNAL_SERVER_ERROR)

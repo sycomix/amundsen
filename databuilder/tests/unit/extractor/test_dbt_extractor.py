@@ -51,9 +51,6 @@ class TestCsvExtractor(unittest.TestCase):
         extractor.init(Scoped.get_scoped_conf(conf=self.conf,
                                               scope=extractor.get_scope()))
 
-        # One block of tests for each type of model created
-        extracted_classes = []
-
         result = extractor.extract()
         self.assertTrue(isinstance(result, TableMetadata))
         self.assertEqual(result.name, 'fact_third_party_performance')
@@ -63,8 +60,7 @@ class TestCsvExtractor(unittest.TestCase):
         self.assertEqual(result.schema, 'public')
         self.assertEqual(result.tags, [])
         self.assertEqual(result.is_view, True)
-        extracted_classes.append(TableMetadata)
-
+        extracted_classes = [TableMetadata]
         result2 = _extract_until_not_these(extractor, extracted_classes)
         self.assertTrue(isinstance(result2, TableSource))
         self.assertEqual(result2.db, self.database_name)
@@ -238,7 +234,7 @@ class TestCsvExtractor(unittest.TestCase):
         extractor.init(Scoped.get_scoped_conf(conf=conf, scope=extractor.get_scope()))
 
         # The 7th table has tags
-        extraction = [extractor.extract() for i in range(6)][-1]
+        extraction = [extractor.extract() for _ in range(6)][-1]
         self.assertEqual(extraction.tags, ['finance', 'certified'])  # type: ignore
 
     def test_do_not_extract_dbt_lineage(self) -> None:

@@ -34,10 +34,10 @@ class BaseS3PreviewClient(BasePreviewClient):
                 payload = jsonify({'preview_data': data})
                 return make_response(payload, HTTPStatus.OK)
             except ValidationError as err:
-                logging.error("PreviewDataSchema serialization error " + str(err.messages))
+                logging.error(f"PreviewDataSchema serialization error {str(err.messages)}")
                 return make_response(jsonify({'preview_data': {}}), HTTPStatus.INTERNAL_SERVER_ERROR)
         except Exception as err:
-            logging.error("error getting s3 preview data " + str(err))
+            logging.error(f"error getting s3 preview data {str(err)}")
             return make_response(jsonify({'preview_data': {}}), HTTPStatus.INTERNAL_SERVER_ERROR)
 
     def get_feature_preview_data(self, params: Dict, optionalHeaders: Dict = None) -> FlaskResponse:

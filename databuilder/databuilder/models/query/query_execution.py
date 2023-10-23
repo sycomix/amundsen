@@ -123,14 +123,9 @@ class QueryExecutionsMetadata(GraphSerializable):
             }
         )
         if self.yield_relation_nodes and self.query_metadata:
-            for query_item in self.query_metadata._create_next_node():
-                yield query_item
+            yield from self.query_metadata._create_next_node()
 
     def _create_relation_iterator(self) -> Iterator[GraphRelationship]:
-        relations = self.get_query_relations()
-        for relation in relations:
-            yield relation
-
+        yield from self.get_query_relations()
         if self.yield_relation_nodes and self.query_metadata:
-            for query_rel in self.query_metadata._create_relation_iterator():
-                yield query_rel
+            yield from self.query_metadata._create_relation_iterator()

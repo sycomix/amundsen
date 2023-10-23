@@ -67,9 +67,11 @@ def create_app(config_module_class: str = None, template_folder: str = None) -> 
         logging.basicConfig(format=app.config['LOG_FORMAT'], datefmt=app.config.get('LOG_DATE_FORMAT'))
         logging.getLogger().setLevel(app.config['LOG_LEVEL'])
 
-    logging.info('Created app with config name {}'.format(config_module_class))
-    logging.info('Using metadata service at {}'.format(app.config.get('METADATASERVICE_BASE')))
-    logging.info('Using search service at {}'.format(app.config.get('SEARCHSERVICE_BASE')))
+    logging.info(f'Created app with config name {config_module_class}')
+    logging.info(
+        f"Using metadata service at {app.config.get('METADATASERVICE_BASE')}"
+    )
+    logging.info(f"Using search service at {app.config.get('SEARCHSERVICE_BASE')}")
 
     api_bp = Blueprint('api', __name__)
     api = Api(api_bp)
@@ -92,8 +94,7 @@ def create_app(config_module_class: str = None, template_folder: str = None) -> 
     app.register_blueprint(dashboard_preview_blueprint)
     init_routes(app)
 
-    init_custom_routes = app.config.get('INIT_CUSTOM_ROUTES')
-    if init_custom_routes:
+    if init_custom_routes := app.config.get('INIT_CUSTOM_ROUTES'):
         init_custom_routes(app)
 
     # handles the deprecation warnings

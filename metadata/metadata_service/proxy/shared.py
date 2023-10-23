@@ -72,4 +72,4 @@ def retrying(callable: Callable[[], CallableV], *,
                 # ignore this, assume our exception is not retryable
                 LOGGER.warning(f'got exception {e2} while handling original exception {e}')
             raise  # the original exception
-    raise RuntimeError(f'we should never get here')
+    raise RuntimeError('we should never get here')

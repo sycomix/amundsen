@@ -57,9 +57,7 @@ class DashboardUsage(Usage):
 
     # override superclass for customized _should_create_user_node behavior
     def create_next_node(self) -> Union[GraphNode, None]:
-        if self._should_create_user_node:
-            return super().create_next_node()
-        return None
+        return super().create_next_node() if self._should_create_user_node else None
 
     # override superclass for customized _should_create_user_node behavior
     def create_next_record(self) -> Union[RDSModel, None]:

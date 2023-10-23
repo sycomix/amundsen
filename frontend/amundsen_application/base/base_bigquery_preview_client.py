@@ -46,13 +46,10 @@ class BaseBigqueryPreviewClient(BasePreviewClient):
         """
         all_fields = []
         if schemafield.field_type != "RECORD":
-            name = key + "." + schemafield.name if key else schemafield.name
+            name = f"{key}.{schemafield.name}" if key else schemafield.name
             return [ColumnItem(name, schemafield.field_type)]
         for field in schemafield.fields:
-            if key:
-                name = key + "." + schemafield.name
-            else:
-                name = schemafield.name
+            name = f"{key}.{schemafield.name}" if key else schemafield.name
             all_fields.extend(self._column_item_from_bq_schema(field, name))
         return all_fields
 
@@ -71,7 +68,7 @@ class BaseBigqueryPreviewClient(BasePreviewClient):
             payload = json.dumps({"preview_data": data}, cls=Encoder)
             return make_response(payload, HTTPStatus.OK)
         except ValidationError as err:
-            logging.error("PreviewDataSchema serialization error + " + str(err.messages))
+            logging.error(f"PreviewDataSchema serialization error + {str(err.messages)}")
             return make_response(
                 jsonify({"preview_data": {}}), HTTPStatus.INTERNAL_SERVER_ERROR
             )

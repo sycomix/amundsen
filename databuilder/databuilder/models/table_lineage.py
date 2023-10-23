@@ -57,7 +57,6 @@ class BaseLineage(GraphSerializable, AtlasSerializable, TableSerializable):
         :return:
         """
         return
-        yield
 
     @abstractmethod
     def _create_rel_iterator(self) -> Iterator[GraphRelationship]:
@@ -71,14 +70,12 @@ class BaseLineage(GraphSerializable, AtlasSerializable, TableSerializable):
 
         entity_attrs = get_entity_attrs(attrs_mapping)
 
-        entity = AtlasEntity(
+        yield AtlasEntity(
             typeName=AtlasTableTypes.process,
             operation=AtlasSerializedEntityOperation.CREATE,
             attributes=entity_attrs,
-            relationships=None
+            relationships=None,
         )
-
-        yield entity
 
     def create_next_atlas_entity(self) -> Union[AtlasEntity, None]:
         try:
@@ -93,28 +90,23 @@ class BaseLineage(GraphSerializable, AtlasSerializable, TableSerializable):
             return None
 
     def _create_next_atlas_relation(self) -> Iterator[AtlasRelationship]:
-        upstream = AtlasRelationship(
+        yield AtlasRelationship(
             relationshipType=AtlasRelationshipTypes.lineage_upstream,
             entityType1=AtlasTableTypes.process,
             entityQualifiedName1=self._get_atlas_process_key(),
             entityType2=self._get_atlas_entity_type(),
             entityQualifiedName2=self._get_atlas_process_key(),
-            attributes={}
+            attributes={},
         )
-
-        yield upstream
-
         for downstream_key in self.downstream_deps:  # type: ignore
-            downstream = AtlasRelationship(
+            yield AtlasRelationship(
                 relationshipType=AtlasRelationshipTypes.lineage_downstream,
                 entityType1=AtlasTableTypes.process,
                 entityQualifiedName1=self._get_atlas_process_key(),
                 entityType2=self._get_atlas_entity_type(),
                 entityQualifiedName2=downstream_key,
-                attributes={}
+                attributes={},
             )
-
-            yield downstream
 
     @abstractmethod
     def _get_atlas_process_key(self) -> str:
@@ -156,16 +148,15 @@ class TableLineage(BaseLineage):
         :return:
         """
         for downstream_key in self.downstream_deps:
-            relationship = GraphRelationship(
+            yield GraphRelationship(
                 start_key=self.table_key,
                 start_label=TableMetadata.TABLE_NODE_LABEL,
                 end_label=TableMetadata.TABLE_NODE_LABEL,
                 end_key=downstream_key,
                 type=TableLineage.ORIGIN_DEPENDENCY_RELATION_TYPE,
                 reverse_type=TableLineage.DEPENDENCY_ORIGIN_RELATION_TYPE,
-                attributes={}
+                attributes={},
             )
-            yield relationship
 
     def _get_atlas_process_key(self) -> str:
         return self.table_key
@@ -179,11 +170,9 @@ class TableLineage(BaseLineage):
         :return:
         """
         for downstream_key in self.downstream_deps:
-            record = RDSTableLineage(
-                table_source_rk=self.table_key,
-                table_target_rk=downstream_key
+            yield RDSTableLineage(
+                table_source_rk=self.table_key, table_target_rk=downstream_key
             )
-            yield record
 
     def __repr__(self) -> str:
         return f'TableLineage({self.table_key!r})'
@@ -210,16 +199,15 @@ class ColumnLineage(BaseLineage):
         :return:
         """
         for downstream_key in self.downstream_deps:
-            relationship = GraphRelationship(
+            yield GraphRelationship(
                 start_key=self.column_key,
                 start_label=ColumnMetadata.COLUMN_NODE_LABEL,
                 end_label=ColumnMetadata.COLUMN_NODE_LABEL,
                 end_key=downstream_key,
                 type=ColumnLineage.ORIGIN_DEPENDENCY_RELATION_TYPE,
                 reverse_type=ColumnLineage.DEPENDENCY_ORIGIN_RELATION_TYPE,
-                attributes={}
+                attributes={},
             )
-            yield relationship
 
     def _get_atlas_process_key(self) -> str:
         return self.column_key
@@ -233,11 +221,9 @@ class ColumnLineage(BaseLineage):
         :return:
         """
         for downstream_key in self.downstream_deps:
-            record = RDSColumnLineage(
-                column_source_rk=self.column_key,
-                column_target_rk=downstream_key
+            yield RDSColumnLineage(
+                column_source_rk=self.column_key, column_target_rk=downstream_key
             )
-            yield record
 
     def __repr__(self) -> str:
         return f'ColumnLineage({self.column_key!r})'

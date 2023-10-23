@@ -59,15 +59,14 @@ def _get_statsd_client(*, prefix: str) -> StatsClient:
     """
     if not has_app_context() or not current_app.config[config.IS_STATSD_ON]:
         return None
-    else:
-        if prefix not in __STATSD_POOL:
-            with __STATSD_POOL_LOCK:
-                if prefix not in __STATSD_POOL:
-                    LOGGER.info('Instantiate StatsClient with prefix {}'.format(prefix))
-                    statsd_client = StatsClient(prefix=prefix)
-                    __STATSD_POOL[prefix] = statsd_client
-                    return statsd_client
+    if prefix not in __STATSD_POOL:
+        with __STATSD_POOL_LOCK:
+            if prefix not in __STATSD_POOL:
+                LOGGER.info(f'Instantiate StatsClient with prefix {prefix}')
+                statsd_client = StatsClient(prefix=prefix)
+                __STATSD_POOL[prefix] = statsd_client
+                return statsd_client
 
-        if LOGGER.isEnabledFor(logging.DEBUG):
-            LOGGER.debug('Reuse StatsClient with prefix {}'.format(prefix))
-        return __STATSD_POOL[prefix]
+    if LOGGER.isEnabledFor(logging.DEBUG):
+        LOGGER.debug(f'Reuse StatsClient with prefix {prefix}')
+    return __STATSD_POOL[prefix]

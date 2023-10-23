@@ -129,8 +129,7 @@ class DbtExtractor(Extractor):
         for catalog_key in DBT_CATALOG_REQD_KEYS:
             if catalog_key not in self._dbt_catalog:
                 raise InvalidDbtInputs(
-                    "Dbt catalog file must contain keys: %s, found keys: %s"
-                    % (DBT_CATALOG_REQD_KEYS, self._dbt_catalog.keys())
+                    f"Dbt catalog file must contain keys: {DBT_CATALOG_REQD_KEYS}, found keys: {self._dbt_catalog.keys()}"
                 )
 
     def _validate_manifest(self) -> None:
@@ -149,8 +148,7 @@ class DbtExtractor(Extractor):
         for manifest_key in DBT_MANIFEST_REQD_KEYS:
             if manifest_key not in self._dbt_manifest:
                 raise InvalidDbtInputs(
-                    "Dbt manifest file must contain keys: %s, found keys: %s"
-                    % (DBT_MANIFEST_REQD_KEYS, self._dbt_manifest.keys())
+                    f"Dbt manifest file must contain keys: {DBT_MANIFEST_REQD_KEYS}, found keys: {self._dbt_manifest.keys()}"
                 )
 
     def _clean_inputs(self) -> None:
@@ -236,7 +234,7 @@ class DbtExtractor(Extractor):
 
             if manifest_content['resource_type'] == DBT_MODEL_TYPE and tbl_node in self._dbt_catalog['nodes']:
                 LOGGER.info(
-                    'Extracting dbt {}.{}'.format(manifest_content['schema'], manifest_content[self._model_name_key])
+                    f"Extracting dbt {manifest_content['schema']}.{manifest_content[self._model_name_key]}"
                 )
 
                 catalog_content = self._dbt_catalog['nodes'][tbl_node]
@@ -285,11 +283,12 @@ class DbtExtractor(Extractor):
             for upstream, downstreams in self._dbt_manifest['child_map'].items():
                 if upstream not in dbt_id_to_table_key:
                     continue
-                valid_downstreams = [
-                    dbt_id_to_table_key[k] for k in downstreams
-                    if k.startswith(DBT_MODEL_PREFIX) and dbt_id_to_table_key.get(k)
-                ]
-                if valid_downstreams:
+                if valid_downstreams := [
+                    dbt_id_to_table_key[k]
+                    for k in downstreams
+                    if k.startswith(DBT_MODEL_PREFIX)
+                    and dbt_id_to_table_key.get(k)
+                ]:
                     yield TableLineage(
                         table_key=dbt_id_to_table_key[upstream],
                         downstream_deps=valid_downstreams

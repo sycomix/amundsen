@@ -91,22 +91,16 @@ class TestDashboardOwner(unittest.TestCase):
 
     def test_owner_relations(self) -> None:
         actual = []
-        relation = self.owner.create_next_relation()
-        while relation:
+        while relation := self.owner.create_next_relation():
             serialized_relation = neo4_serializer.serialize_relationship(relation)
             actual.append(serialized_relation)
-            relation = self.owner.create_next_relation()
-
         self.assertEqual(actual, self.expected_relations)
 
     def test_owner_record(self) -> None:
         actual = []
-        record = self.owner.create_next_record()
-        while record:
+        while record := self.owner.create_next_record():
             serialized_record = mysql_serializer.serialize_record(record)
             actual.append(serialized_record)
-            record = self.owner.create_next_record()
-
         self.assertEqual(actual, self.expected_records)
 
     def test_not_table_serializable(self) -> None:

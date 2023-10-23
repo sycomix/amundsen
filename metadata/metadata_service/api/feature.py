@@ -180,7 +180,7 @@ class FeatureDescriptionAPI(Resource):
 
         except NotFoundException:
             LOGGER.error(f'NotFoundException: feature_uri {id} does not exist')
-            return {'message': 'feature_uri {} does not exist'.format(id)}, HTTPStatus.NOT_FOUND
+            return {'message': f'feature_uri {id} does not exist'}, HTTPStatus.NOT_FOUND
 
         except Exception as e:
             LOGGER.error(f'Internal server error occurred when adding description: {e}')
@@ -206,12 +206,12 @@ class FeatureTagAPI(Resource):
         tag_type = args.get('tag_type', 'default')
 
         if tag_type == 'owner':
-            LOGGER.error(f'Invalid attempt to add owner tag')
+            LOGGER.error('Invalid attempt to add owner tag')
             return \
-                {'message': f'The tag {tag} for id {id} with type {tag_type} '
+                    {'message': f'The tag {tag} for id {id} with type {tag_type} '
                             f'and resource_type {ResourceType.Feature.name} is '
                             'not added successfully because owner tags are not editable'}, \
-                HTTPStatus.CONFLICT
+                    HTTPStatus.CONFLICT
 
         return self._tag_common.put(id=id,
                                     resource_type=ResourceType.Feature,
@@ -223,12 +223,12 @@ class FeatureTagAPI(Resource):
         args = self.parser.parse_args()
         tag_type = args.get('tag_type', 'default')
         if tag_type == 'owner':
-            LOGGER.error(f'Invalid attempt to delete owner tag')
+            LOGGER.error('Invalid attempt to delete owner tag')
             return \
-                {'message': f'The tag {tag} for id {id} with type {tag_type} '
+                    {'message': f'The tag {tag} for id {id} with type {tag_type} '
                             f'and resource_type {ResourceType.Feature.name} is '
                             'not deleted because owner tags are not editable'}, \
-                HTTPStatus.CONFLICT
+                    HTTPStatus.CONFLICT
 
         return self._tag_common.delete(id=id,
                                        resource_type=ResourceType.Feature,

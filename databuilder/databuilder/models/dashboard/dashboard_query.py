@@ -78,13 +78,11 @@ class DashboardQuery(GraphSerializable, TableSerializable, AtlasSerializable):
         if self._query_text:
             node_attributes['query_text'] = self._query_text
 
-        node = GraphNode(
+        yield GraphNode(
             key=self._get_query_node_key(),
             label=DashboardQuery.DASHBOARD_QUERY_LABEL,
-            attributes=node_attributes
+            attributes=node_attributes,
         )
-
-        yield node
 
     def create_next_relation(self) -> Union[GraphRelationship, None]:
         try:
@@ -93,21 +91,20 @@ class DashboardQuery(GraphSerializable, TableSerializable, AtlasSerializable):
             return None
 
     def _create_relation_iterator(self) -> Iterator[GraphRelationship]:
-        relationship = GraphRelationship(
+        yield GraphRelationship(
             start_label=DashboardMetadata.DASHBOARD_NODE_LABEL,
             end_label=DashboardQuery.DASHBOARD_QUERY_LABEL,
             start_key=DashboardMetadata.DASHBOARD_KEY_FORMAT.format(
                 product=self._product,
                 cluster=self._cluster,
                 dashboard_group=self._dashboard_group_id,
-                dashboard_name=self._dashboard_id
+                dashboard_name=self._dashboard_id,
             ),
             end_key=self._get_query_node_key(),
             type=DashboardQuery.DASHBOARD_QUERY_RELATION_TYPE,
             reverse_type=DashboardQuery.QUERY_DASHBOARD_RELATION_TYPE,
-            attributes={}
+            attributes={},
         )
-        yield relationship
 
     def create_next_record(self) -> Union[RDSModel, None]:
         try:
@@ -178,13 +175,12 @@ class DashboardQuery(GraphSerializable, TableSerializable, AtlasSerializable):
             )
         )
 
-        query_entity = AtlasEntity(
+        yield AtlasEntity(
             typeName=AtlasDashboardTypes.query,
             operation=AtlasSerializedEntityOperation.CREATE,
             attributes=query_entity_attrs,
-            relationships=get_entity_relationships(relationship_list)
+            relationships=get_entity_relationships(relationship_list),
         )
-        yield query_entity
 
     def __repr__(self) -> str:
         return f'DashboardQuery({self._dashboard_group_id!r}, {self._dashboard_id!r}, {self._query_name!r}, ' \

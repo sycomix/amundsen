@@ -83,7 +83,7 @@ def request_search(*,     # type: ignore
 
 
 # TODO: Define an interface for envoy_client
-def request_wrapper(method: str, url: str, client, headers, timeout_sec: int, data=None, json=None):  # type: ignore
+def request_wrapper(method: str, url: str, client, headers, timeout_sec: int, data=None, json=None):    # type: ignore
     """
     Wraps a request to use Envoy client and headers, if available
     :param method: DELETE | GET | POST | PUT
@@ -94,21 +94,10 @@ def request_wrapper(method: str, url: str, client, headers, timeout_sec: int, da
     :param data: Optional request payload
     :return:
     """
-    # If no timeout specified, use the one from the configurations.
-    timeout_sec = timeout_sec or app.config['REQUEST_SESSION_TIMEOUT_SEC']
+    if client is None:
+        # If no timeout specified, use the one from the configurations.
+        timeout_sec = timeout_sec or app.config['REQUEST_SESSION_TIMEOUT_SEC']
 
-    if client is not None:
-        if method == 'DELETE':
-            return client.delete(url, headers=headers, raw_response=True, data=data, json=json)
-        elif method == 'GET':
-            return client.get(url, headers=headers, raw_response=True)
-        elif method == 'POST':
-            return client.post(url, headers=headers, raw_response=True, raw_request=True, data=data, json=json)
-        elif method == 'PUT':
-            return client.put(url, headers=headers, raw_response=True, raw_request=True, data=data, json=json)
-        else:
-            raise Exception('Method not allowed: {}'.format(method))
-    else:
         with build_session() as s:
             if method == 'DELETE':
                 return s.delete(url, headers=headers, timeout=timeout_sec, data=data, json=json)
@@ -119,7 +108,17 @@ def request_wrapper(method: str, url: str, client, headers, timeout_sec: int, da
             elif method == 'PUT':
                 return s.put(url, headers=headers, timeout=timeout_sec, data=data, json=json)
             else:
-                raise Exception('Method not allowed: {}'.format(method))
+                raise Exception(f'Method not allowed: {method}')
+    elif method == 'DELETE':
+        return client.delete(url, headers=headers, raw_response=True, data=data, json=json)
+    elif method == 'GET':
+        return client.get(url, headers=headers, raw_response=True)
+    elif method == 'POST':
+        return client.post(url, headers=headers, raw_response=True, raw_request=True, data=data, json=json)
+    elif method == 'PUT':
+        return client.put(url, headers=headers, raw_response=True, raw_request=True, data=data, json=json)
+    else:
+        raise Exception(f'Method not allowed: {method}')
 
 
 def build_session() -> requests.Session:

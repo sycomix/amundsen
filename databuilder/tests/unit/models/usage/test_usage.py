@@ -70,22 +70,16 @@ class TestUsage(unittest.TestCase):
 
     def test_usage_relations(self) -> None:
         actual = []
-        relation = self.usage.create_next_relation()
-        while relation:
+        while relation := self.usage.create_next_relation():
             serialized_relation = neo4_serializer.serialize_relationship(relation)
             actual.append(serialized_relation)
-            relation = self.usage.create_next_relation()
-
         self.assertEqual(actual, self.expected_relations)
 
     def test_usage_record(self) -> None:
         actual = []
-        record = self.usage.create_next_record()
-        while record:
+        while record := self.usage.create_next_record():
             serialized_record = mysql_serializer.serialize_record(record)
             actual.append(serialized_record)
-            record = self.usage.create_next_record()
-
         self.assertEqual(actual, self.expected_records)
 
     def test_usage_not_table_serializable(self) -> None:

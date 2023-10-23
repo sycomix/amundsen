@@ -179,23 +179,17 @@ class TestApplication(unittest.TestCase):
     def test_create_nodes(self) -> None:
         for tc in self.test_cases:
             actual = []
-            node = tc.application.create_next_node()
-            while node:
+            while node := tc.application.create_next_node():
                 serialized_next_node = neo4_serializer.serialize_node(node)
                 actual.append(serialized_next_node)
-                node = tc.application.create_next_node()
-
             self.assertEqual(actual, tc.expected_node_results)
 
     def test_create_nodes_neptune(self) -> None:
         for tc in self.test_cases:
             actual = []
-            next_node = tc.application.create_next_node()
-            while next_node:
+            while next_node := tc.application.create_next_node():
                 serialized_next_node = neptune_serializer.convert_node(next_node)
                 actual.append(serialized_next_node)
-                next_node = tc.application.create_next_node()
-
             node_id = f'Application:{tc.application.application_key}'
             node_key = tc.application.application_key
             neptune_expected = [{
@@ -214,18 +208,15 @@ class TestApplication(unittest.TestCase):
     def test_create_relation(self) -> None:
         for tc in self.test_cases:
             actual = []
-            relation = tc.application.create_next_relation()
-            while relation:
+            while relation := tc.application.create_next_relation():
                 serialized_relation = neo4_serializer.serialize_relationship(relation)
                 actual.append(serialized_relation)
-                relation = tc.application.create_next_relation()
-
             self.assertEqual(actual, tc.expected_relation_results)
 
     def test_create_relations_neptune(self) -> None:
+        table_id = 'Table:hive://gold.default/test_table'
         for tc in self.test_cases:
             application_id = f'Application:{tc.application.application_key}'
-            table_id = 'Table:hive://gold.default/test_table'
             neptune_forward_expected = {
                 NEPTUNE_HEADER_ID: "{label}:{from_vertex_id}_{to_vertex_id}".format(
                     from_vertex_id=table_id,
@@ -264,12 +255,9 @@ class TestApplication(unittest.TestCase):
             neptune_expected = [[neptune_forward_expected, neptune_reversed_expected]]
 
             actual = []
-            next_relation = tc.application.create_next_relation()
-            while next_relation:
+            while next_relation := tc.application.create_next_relation():
                 serialized_next_relation = neptune_serializer.convert_relationship(next_relation)
                 actual.append(serialized_next_relation)
-                next_relation = tc.application.create_next_relation()
-
             self.assertEqual(actual, neptune_expected)
 
     def test_create_records(self) -> None:
@@ -277,10 +265,7 @@ class TestApplication(unittest.TestCase):
             expected = tc.expected_records
 
             actual = []
-            record = tc.application.create_next_record()
-            while record:
+            while record := tc.application.create_next_record():
                 serialized_record = mysql_serializer.serialize_record(record)
                 actual.append(serialized_record)
-                record = tc.application.create_next_record()
-
             self.assertEqual(expected, actual)

@@ -90,7 +90,11 @@ class ElasticsearchBaseExtractor(Extractor):
         cols: List[ColumnMetadata] = []
 
         for col_name, col_mapping in input_mapping.items():
-            qualified_col_name = str(parent_col_name) + separator + col_name if parent_col_name else col_name
+            qualified_col_name = (
+                parent_col_name + separator + col_name
+                if parent_col_name
+                else col_name
+            )
             if isinstance(col_mapping, dict):
                 if col_mapping.__contains__('properties'):
                     # Need to recurse
@@ -108,9 +112,7 @@ class ElasticsearchBaseExtractor(Extractor):
 
     def extract(self) -> Any:
         try:
-            result = next(self._extract_iter)
-
-            return result
+            return next(self._extract_iter)
         except StopIteration:
             return None
 

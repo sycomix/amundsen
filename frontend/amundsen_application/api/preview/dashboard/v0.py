@@ -28,7 +28,7 @@ def initialize_preview_factory_class() -> None:
     if not PREVIEW_FACTORY:
         PREVIEW_FACTORY = DefaultPreviewMethodFactory()
 
-    LOGGER.info('Using {} for Dashboard'.format(PREVIEW_FACTORY))
+    LOGGER.info(f'Using {PREVIEW_FACTORY} for Dashboard')
 
 
 @dashboard_preview_blueprint.route('/dashboard/<path:uri>/preview.jpg', methods=['GET'])
@@ -55,4 +55,7 @@ def get_preview_image(uri: str) -> Response:
         return make_response(jsonify({'msg': pe.args[0]}), HTTPStatus.UNAUTHORIZED)
     except Exception as e:
         LOGGER.exception('Unexpected failure on get_preview_image')
-        return make_response(jsonify({'msg': 'Encountered exception: ' + str(e)}), HTTPStatus.INTERNAL_SERVER_ERROR)
+        return make_response(
+            jsonify({'msg': f'Encountered exception: {str(e)}'}),
+            HTTPStatus.INTERNAL_SERVER_ERROR,
+        )

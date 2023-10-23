@@ -37,11 +37,11 @@ class IssuesAPI(Resource):
             return make_response(jsonify({'issues': response.serialize()}), HTTPStatus.OK)
 
         except IssueConfigurationException as e:
-            message = 'Encountered exception: ' + str(e)
+            message = f'Encountered exception: {str(e)}'
             logging.exception(message)
             return make_response(jsonify({'msg': message}), HTTPStatus.NOT_IMPLEMENTED)
         except Exception as e:
-            message = 'Encountered exception: ' + str(e)
+            message = f'Encountered exception: {str(e)}'
             logging.exception(message)
             return make_response(jsonify({'msg': message}), HTTPStatus.INTERNAL_SERVER_ERROR)
 
@@ -81,10 +81,10 @@ class IssueAPI(Resource):
             return make_response(jsonify({'issue': response.serialize()}), HTTPStatus.OK)
 
         except IssueConfigurationException as e:
-            message = 'Encountered exception: ' + str(e)
+            message = f'Encountered exception: {str(e)}'
             logging.exception(message)
             return make_response(jsonify({'msg': message}), HTTPStatus.NOT_IMPLEMENTED)
         except Exception as e:
-            message = 'Encountered exception: ' + str(e)
+            message = f'Encountered exception: {str(e)}'
             logging.exception(message)
             return make_response(jsonify({'msg': message}), HTTPStatus.INTERNAL_SERVER_ERROR)

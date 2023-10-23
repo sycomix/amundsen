@@ -62,12 +62,11 @@ class DashboardLastModifiedTimestamp(GraphSerializable, TableSerializable, Atlas
             timestamp_constants.TIMESTAMP_PROPERTY: self._last_modified_timestamp,
             timestamp_constants.TIMESTAMP_NAME_PROPERTY: timestamp_constants.TimestampName.last_updated_timestamp.name
         }
-        node = GraphNode(
+        yield GraphNode(
             key=self._get_last_modified_node_key(),
             label=timestamp_constants.NODE_LABEL,
-            attributes=node_attributes
+            attributes=node_attributes,
         )
-        yield node
 
     def create_next_relation(self) -> Union[GraphRelationship, None]:
         try:
@@ -76,21 +75,20 @@ class DashboardLastModifiedTimestamp(GraphSerializable, TableSerializable, Atlas
             return None
 
     def _create_relation_iterator(self) -> Iterator[GraphRelationship]:
-        relationship = GraphRelationship(
+        yield GraphRelationship(
             start_key=DashboardMetadata.DASHBOARD_KEY_FORMAT.format(
                 product=self._product,
                 cluster=self._cluster,
                 dashboard_group=self._dashboard_group_id,
-                dashboard_name=self._dashboard_id
+                dashboard_name=self._dashboard_id,
             ),
             start_label=DashboardMetadata.DASHBOARD_NODE_LABEL,
             end_key=self._get_last_modified_node_key(),
             end_label=timestamp_constants.NODE_LABEL,
             type=timestamp_constants.LASTUPDATED_RELATION_TYPE,
             reverse_type=timestamp_constants.LASTUPDATED_REVERSE_RELATION_TYPE,
-            attributes={}
+            attributes={},
         )
-        yield relationship
 
     def create_next_atlas_entity(self) -> Union[AtlasEntity, None]:
         try:
@@ -115,13 +113,12 @@ class DashboardLastModifiedTimestamp(GraphSerializable, TableSerializable, Atlas
 
         dashboard_entity_attrs = get_entity_attrs(attrs_mapping)
 
-        last_modified = AtlasEntity(
+        yield AtlasEntity(
             typeName=AtlasDashboardTypes.metadata,
             operation=AtlasSerializedEntityOperation.UPDATE,
             relationships=None,
-            attributes=dashboard_entity_attrs
+            attributes=dashboard_entity_attrs,
         )
-        yield last_modified
 
     def create_next_atlas_relation(self) -> Union[AtlasRelationship, None]:
         return None

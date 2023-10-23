@@ -42,7 +42,7 @@ def get_announcements() -> Response:
                 return make_response(payload, HTTPStatus.NOT_IMPLEMENTED)
         return ANNOUNCEMENT_CLIENT_INSTANCE._get_posts()
     except Exception as e:
-        message = 'Encountered exception: ' + str(e)
+        message = f'Encountered exception: {str(e)}'
         logging.exception(message)
         payload = jsonify({'posts': [], 'msg': message})
         return make_response(payload, HTTPStatus.INTERNAL_SERVER_ERROR)

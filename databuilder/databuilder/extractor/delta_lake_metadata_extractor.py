@@ -87,13 +87,10 @@ class ScrapedTableMetadata(object):
         self.failed_to_scrape = False
 
     def get_details(self) -> Optional[Dict]:
-        if self.is_view:
-            return self.view_detail
-        else:
-            return self.table_detail
+        return self.view_detail if self.is_view else self.table_detail
 
     def get_full_table_name(self) -> str:
-        return self.schema + "." + self.table
+        return f"{self.schema}.{self.table}"
 
     def set_failed_to_scrape(self) -> None:
         self.failed_to_scrape = True
@@ -207,23 +204,17 @@ class DeltaLakeMetadataExtractor(Extractor):
                 continue
             else:
                 yield self.create_table_metadata(scraped_table)
-                watermarks = self.create_table_watermarks(scraped_table)
-                if watermarks:
+                if watermarks := self.create_table_watermarks(scraped_table):
                     for watermark in watermarks:
                         yield watermark[0]
                         yield watermark[1]
-                last_updated = self.create_table_last_updated(scraped_table)
-                if last_updated:
+                if last_updated := self.create_table_last_updated(scraped_table):
                     yield last_updated
 
     def get_schemas(self, exclude_list: List[str]) -> List[str]:
         '''Returns all schemas.'''
         schemas = self.spark.catalog.listDatabases()
-        ret = []
-        for schema in schemas:
-            if schema.name not in exclude_list:
-                ret.append(schema.name)
-        return ret
+        return [schema.name for schema in schemas if schema.name not in exclude_list]
 
     def get_all_tables(self, schemas: List[str]) -> List[Table]:
         '''Returns all tables.'''
@@ -239,8 +230,7 @@ class DeltaLakeMetadataExtractor(Extractor):
     def scrape_all_tables(self, tables: List[Table]) -> List[Optional[ScrapedTableMetadata]]:
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = [executor.submit(self.scrape_table, table) for table in tables]
-        scraped_tables = [f.result() for f in futures]
-        return scraped_tables
+        return [f.result() for f in futures]
 
     def scrape_table(self, table: Table) -> Optional[ScrapedTableMetadata]:
         '''Takes a table object and creates a scraped table metadata object.'''
@@ -249,28 +239,27 @@ class DeltaLakeMetadataExtractor(Extractor):
         if table.tableType and table.tableType.lower() != 'view':
             table_detail = self.scrape_table_detail(table_name)
             if table_detail is None:
-                LOGGER.error("Failed to parse table " + table_name)
+                LOGGER.error(f"Failed to parse table {table_name}")
                 met.set_failed_to_scrape()
                 return None
             else:
-                LOGGER.info("Successfully parsed table " + table_name)
+                LOGGER.info(f"Successfully parsed table {table_name}")
                 met.set_table_detail(table_detail)
         else:
             view_detail = self.scrape_view_detail(table_name)
             if view_detail is None:
-                LOGGER.error("Failed to parse view " + table_name)
+                LOGGER.error(f"Failed to parse view {table_name}")
                 met.set_failed_to_scrape()
                 return None
             else:
-                LOGGER.info("Successfully parsed view " + table_name)
+                LOGGER.info(f"Successfully parsed view {table_name}")
                 met.set_view_detail(view_detail)
-        columns = self.fetch_columns(met.schema, met.table)
-        if not columns:
-            LOGGER.error("Failed to parse columns for " + table_name)
-            return None
-        else:
+        if columns := self.fetch_columns(met.schema, met.table):
             met.set_columns(columns)
             return met
+        else:
+            LOGGER.error(f"Failed to parse columns for {table_name}")
+            return None
 
     def scrape_table_detail(self, table_name: str) -> Optional[Dict]:
         try:
@@ -325,8 +314,8 @@ class DeltaLakeMetadataExtractor(Extractor):
             if not partition_cols:
                 # Attempt to extract nested columns if conf value requests it
                 if self.extract_nested_columns \
-                        and col_name in field_dict \
-                        and self.is_complex_delta_type(field_dict[col_name].dataType):
+                            and col_name in field_dict \
+                            and self.is_complex_delta_type(field_dict[col_name].dataType):
                     sort_order = self._iterate_complex_type("", field_dict[col_name], parsed_columns, sort_order)
                 else:
                     column = ScrapedColumnMetadata(
@@ -338,15 +327,14 @@ class DeltaLakeMetadataExtractor(Extractor):
                     )
                     parsed_columns[row['col_name']] = column
                     sort_order += 1
-            else:
-                if row['data_type'] in parsed_columns:
-                    LOGGER.debug(f"Adding partition column table for {row['data_type']}")
-                    parsed_columns[row['data_type']].set_is_partition(True)
-                    parsed_columns[row['data_type']].set_badges([PARTITION_BADGE])
-                elif row['col_name'] in parsed_columns:
-                    LOGGER.debug(f"Adding partition column table for {row['col_name']}")
-                    parsed_columns[row['col_name']].set_is_partition(True)
-                    parsed_columns[row['col_name']].set_badges([PARTITION_BADGE])
+            elif row['data_type'] in parsed_columns:
+                LOGGER.debug(f"Adding partition column table for {row['data_type']}")
+                parsed_columns[row['data_type']].set_is_partition(True)
+                parsed_columns[row['data_type']].set_badges([PARTITION_BADGE])
+            elif row['col_name'] in parsed_columns:
+                LOGGER.debug(f"Adding partition column table for {row['col_name']}")
+                parsed_columns[row['col_name']].set_is_partition(True)
+                parsed_columns[row['col_name']].set_badges([PARTITION_BADGE])
         return list(parsed_columns.values())
 
     def _iterate_complex_type(self,
@@ -356,11 +344,7 @@ class DeltaLakeMetadataExtractor(Extractor):
                               total_cols: int) -> int:
         col_name = parent
         if self.is_struct_field(curr_field):
-            if len(parent) > 0:
-                col_name = f"{parent}.{curr_field.name}"
-            else:
-                col_name = curr_field.name
-
+            col_name = f"{parent}.{curr_field.name}" if parent != "" else curr_field.name
             parsed_columns[col_name] = ScrapedColumnMetadata(
                 name=col_name,
                 data_type=curr_field.dataType.simpleString(),
@@ -386,14 +370,16 @@ class DeltaLakeMetadataExtractor(Extractor):
         '''Creates the amundsen table metadata object from the ScrapedTableMetadata object.'''
         amundsen_columns = []
         if table.columns:
-            for column in table.columns:
-                amundsen_columns.append(
-                    ColumnMetadata(name=column.name,
-                                   description=column.description,
-                                   col_type=column.data_type,
-                                   sort_order=column.sort_order,
-                                   badges=column.badges)
+            amundsen_columns.extend(
+                ColumnMetadata(
+                    name=column.name,
+                    description=column.description,
+                    col_type=column.data_type,
+                    sort_order=column.sort_order,
+                    badges=column.badges,
                 )
+                for column in table.columns
+            )
         description = table.get_table_description()
         return TableMetadata(self._db,
                              self._cluster,
@@ -405,8 +391,7 @@ class DeltaLakeMetadataExtractor(Extractor):
 
     def create_table_last_updated(self, table: ScrapedTableMetadata) -> Optional[TableLastUpdated]:
         '''Creates the amundsen table last updated metadata object from the ScrapedTableMetadata object.'''
-        last_modified = table.get_last_modified()
-        if last_modified:
+        if last_modified := table.get_last_modified():
             return TableLastUpdated(table_name=table.table,
                                     last_updated_time_epoch=int(last_modified.timestamp()),
                                     schema=table.schema,
@@ -416,9 +401,7 @@ class DeltaLakeMetadataExtractor(Extractor):
             return None
 
     def is_complex_delta_type(self, delta_type: Any) -> bool:
-        return isinstance(delta_type, StructType) or \
-            isinstance(delta_type, ArrayType) or \
-            isinstance(delta_type, MapType)
+        return isinstance(delta_type, (StructType, ArrayType, MapType))
 
     def is_struct_type(self, delta_type: Any) -> bool:
         return isinstance(delta_type, StructType)
@@ -432,7 +415,7 @@ class DeltaLakeMetadataExtractor(Extractor):
     def is_map_type(self, delta_type: Any) -> bool:
         return isinstance(delta_type, MapType)
 
-    def create_table_watermarks(self, table: ScrapedTableMetadata) -> Optional[List[Tuple[Watermark, Watermark]]]:  # noqa c901
+    def create_table_watermarks(self, table: ScrapedTableMetadata) -> Optional[List[Tuple[Watermark, Watermark]]]:    # noqa c901
         """
         Creates the watermark objects that reflect the highest and lowest values in the partition columns
         """
@@ -499,10 +482,7 @@ class DeltaLakeMetadataExtractor(Extractor):
         # It makes little sense to get watermarks from a string value, with no concept of high and low.
         # Just imagine a dataset with a partition by country...
         valid_types = ['int', 'float', 'date', 'datetime']
-        if table.columns:
-            _table_columns = table.columns
-        else:
-            _table_columns = []
+        _table_columns = table.columns if table.columns else []
         columns_with_valid_type = list(map(lambda l: l.name,
                                            filter(lambda l: str(l.data_type).lower() in valid_types, _table_columns)
                                            )

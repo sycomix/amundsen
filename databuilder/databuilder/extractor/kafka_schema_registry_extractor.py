@@ -119,20 +119,15 @@ class KafkaSchemaRegistryExtractor(Extractor):
         """
         Create TableMetadata based on given schema and names
         """
-        columns: List[ColumnMetadata] = []
-
-        for i, field in enumerate(schema['fields']):
-            columns.append(
-                ColumnMetadata(
-                    name=field['name'],
-                    description=field.get('doc', None),
-                    col_type=KafkaSchemaRegistryExtractor._get_property_type(
-                        field
-                    ),
-                    sort_order=i,
-                )
+        columns: List[ColumnMetadata] = [
+            ColumnMetadata(
+                name=field['name'],
+                description=field.get('doc', None),
+                col_type=KafkaSchemaRegistryExtractor._get_property_type(field),
+                sort_order=i,
             )
-
+            for i, field in enumerate(schema['fields'])
+        ]
         return TableMetadata(
             database='kafka_schema_registry',
             cluster=cluster_name,
@@ -161,21 +156,20 @@ class KafkaSchemaRegistryExtractor(Extractor):
             return '|'.join(schema['type'])
 
         if schema['type'] == 'record':
-            properties = [
+            if properties := [
                 f"{field['name']}:"
                 f"{KafkaSchemaRegistryExtractor._get_property_type(field)}"
                 for field in schema.get('fields', {})
-            ]
-            if len(properties) > 0:
+            ]:
                 if 'name' in schema:
                     return schema['name'] + \
-                        ':struct<' + ','.join(properties) + '>'
+                            ':struct<' + ','.join(properties) + '>'
                 return 'struct<' + ','.join(properties) + '>'
             return 'struct<object>'
         elif schema['type'] == 'array':
             items = KafkaSchemaRegistryExtractor._get_property_type(
                 schema.get("items", {})
             )
-            return 'array<' + items + '>'
+            return f'array<{items}>'
         else:
             return schema['type']

@@ -192,7 +192,7 @@ class MySQLProxy(BaseProxy):
 
         with self.client.create_session() as session:
             existed_user = session.query(RDSUser).filter(RDSUser.rk == user.user_id).first()
-            is_new = False if existed_user else True
+            is_new = not existed_user
 
             session.merge(user_record)
             session.commit()
@@ -220,23 +220,26 @@ class MySQLProxy(BaseProxy):
             # usage
             readers = self._get_table_readers(session=session, table_uri=table_uri)
 
-        table_result = Table(database=table['database'].name,
-                             cluster=table['cluster'].name,
-                             schema=table['schema'].name,
-                             name=table['table'].name,
-                             tags=table['tags'],
-                             badges=table['badges'],
-                             description=table['description'].description if table['description'] else None,
-                             columns=cols,
-                             owners=table['owners'],
-                             table_readers=readers,
-                             watermarks=table['watermarks'],
-                             table_writer=table['table_writer'],
-                             last_updated_timestamp=table['last_updated_timestamp'],
-                             source=table['source'],
-                             is_view=table['table'].is_view,
-                             programmatic_descriptions=table['programmatic_descriptions'])
-        return table_result
+        return Table(
+            database=table['database'].name,
+            cluster=table['cluster'].name,
+            schema=table['schema'].name,
+            name=table['table'].name,
+            tags=table['tags'],
+            badges=table['badges'],
+            description=table['description'].description
+            if table['description']
+            else None,
+            columns=cols,
+            owners=table['owners'],
+            table_readers=readers,
+            watermarks=table['watermarks'],
+            table_writer=table['table_writer'],
+            last_updated_timestamp=table['last_updated_timestamp'],
+            source=table['source'],
+            is_view=table['table'].is_view,
+            programmatic_descriptions=table['programmatic_descriptions'],
+        )
 
     @timer_with_counter
     def _get_table_metadata(self, *, session: Session, table_uri: str) -> Optional[Dict[str, Any]]:
@@ -283,11 +286,7 @@ class MySQLProxy(BaseProxy):
         # timestamp_value
         timestamp_value = table.timestamp.last_updated_timestamp if table.timestamp else None
 
-        # owners
-        owner_results = []
-        for owner in table.owners:
-            owner_results.append(User(email=owner.email))
-
+        owner_results = [User(email=owner.email) for owner in table.owners]
         # source
         source_result = None
         source = table.source
@@ -308,21 +307,21 @@ class MySQLProxy(BaseProxy):
                                                                         text=prog_desc.description))
         prog_description_results.sort(key=lambda x: x.source)
 
-        table_metadata_result = dict(database=database,
-                                     cluster=cluster,
-                                     schema=schema,
-                                     table=table,
-                                     tags=tag_results,
-                                     badges=badge_results,
-                                     description=description_result,
-                                     owners=owner_results,
-                                     watermarks=watermark_results,
-                                     table_writer=table_writer,
-                                     last_updated_timestamp=timestamp_value,
-                                     source=source_result,
-                                     programmatic_descriptions=prog_description_results)
-
-        return table_metadata_result
+        return dict(
+            database=database,
+            cluster=cluster,
+            schema=schema,
+            table=table,
+            tags=tag_results,
+            badges=badge_results,
+            description=description_result,
+            owners=owner_results,
+            watermarks=watermark_results,
+            table_writer=table_writer,
+            last_updated_timestamp=timestamp_value,
+            source=source_result,
+            programmatic_descriptions=prog_description_results,
+        )
 
     @timer_with_counter
     def _get_table_columns(self, *, session: Session, table_uri: str) -> List[Column]:
@@ -350,12 +349,10 @@ class MySQLProxy(BaseProxy):
                 )
                 col_stat_results.append(col_stat_result)
 
-            col_badge_results = []
-            for badge in column.badges:
-                col_badge_results.append(
-                    TableBadge(badge_name=badge.rk, category=badge.category)
-                )
-
+            col_badge_results = [
+                TableBadge(badge_name=badge.rk, category=badge.category)
+                for badge in column.badges
+            ]
             col_result = Column(name=column.name,
                                 description=column.description.description
                                 if column.description else None,
@@ -441,7 +438,7 @@ class MySQLProxy(BaseProxy):
         :param description:
         :return:
         """
-        desc_key = table_uri + '/_description'
+        desc_key = f'{table_uri}/_description'
         description = RDSTableDescription(rk=desc_key,
                                           description_source='description',
                                           description=description,
@@ -621,8 +618,8 @@ class MySQLProxy(BaseProxy):
         :param description:
         :return:
         """
-        column_uri = table_uri + '/' + column_name
-        desc_key = column_uri + '/_description'
+        column_uri = f'{table_uri}/{column_name}'
+        desc_key = f'{column_uri}/_description'
         description = RDSColumnDescription(rk=desc_key,
                                            description_source='description',
                                            description=description,
@@ -643,8 +640,8 @@ class MySQLProxy(BaseProxy):
         :param column_name:
         :return:
         """
-        column_uri = table_uri + '/' + column_name
-        desc_key = column_uri + '/_description'
+        column_uri = f'{table_uri}/{column_name}'
+        desc_key = f'{column_uri}/_description'
         with self.client.create_session() as session:
             description = session.query(RDSColumnDescription.description).filter(
                 RDSColumnDescription.rk == desc_key
@@ -726,7 +723,7 @@ class MySQLProxy(BaseProxy):
         popular_resources: Dict[str, List] = dict()
         for resource in resource_types:
             resource_type = to_resource_type(label=resource)
-            popular_resources[resource_type.name] = list()
+            popular_resources[resource_type.name] = []
             if user_id is None:
                 # Get global popular Table/Dashboard URIs
                 resource_uris = self._get_global_popular_resources_uris(num_entries=num_entries,
@@ -959,19 +956,17 @@ class MySQLProxy(BaseProxy):
                 RDSTag.rk.label('tag_name'),
                 tag_count
             )\
-                .outerjoin(RDSTableTag)\
-                .outerjoin(RDSDashboardTag)\
-                .filter(RDSTag.tag_type == 'default')\
-                .group_by(RDSTag.rk)\
-                .having(tag_count > 0)\
-                .all()
+                    .outerjoin(RDSTableTag)\
+                    .outerjoin(RDSDashboardTag)\
+                    .filter(RDSTag.tag_type == 'default')\
+                    .group_by(RDSTag.rk)\
+                    .having(tag_count > 0)\
+                    .all()
 
-        results = []
-        for record in records:
-            results.append(TagDetail(tag_name=record.tag_name,
-                                     tag_count=record.tag_count))
-
-        return results
+        return [
+            TagDetail(tag_name=record.tag_name, tag_count=record.tag_count)
+            for record in records
+        ]
 
     @timer_with_counter
     def get_badges(self) -> List:
@@ -984,12 +979,9 @@ class MySQLProxy(BaseProxy):
         with self.client.create_session() as session:
             badges = session.query(RDSBadge).all()
 
-        results = []
-        for badge in badges:
-            results.append(Badge(badge_name=badge.rk,
-                                 category=badge.category))
-
-        return results
+        return [
+            Badge(badge_name=badge.rk, category=badge.category) for badge in badges
+        ]
 
     @timer_with_counter
     def get_dashboard_by_user_relation(self, *, user_email: str, relation_type: UserResourceRel) -> \
@@ -1154,11 +1146,7 @@ class MySQLProxy(BaseProxy):
             RDSTableUsage.read_count.desc()
         ).limit(50).all()
 
-        table_uris = []
-        for record in records:
-            table_uris.append(record.table_rk)
-
-        return table_uris
+        return [record.table_rk for record in records]
 
     @timer_with_counter
     def add_resource_relation_by_user(self, *, id: str,
@@ -1384,7 +1372,7 @@ class MySQLProxy(BaseProxy):
         :param description:
         :return:
         """
-        desc_key = id + '/_description'
+        desc_key = f'{id}/_description'
         description = RDSDashboardDescription(rk=desc_key, description=description, dashboard_rk=id)
         try:
             with self.client.create_session() as session:
@@ -1572,10 +1560,7 @@ class MySQLProxy(BaseProxy):
             """
             if node not in node_to_edges:
                 return
-                yield
-
-            for edge in node_to_edges[node]:
-                yield edge
+            yield from node_to_edges[node]
 
         node_to_edges = {parent: [Edge(in_node=tgt_item.parent, out_node=tgt_item.key)
                                   for tgt_item in lineage_items if tgt_item.parent == parent]

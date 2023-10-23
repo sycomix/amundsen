@@ -191,9 +191,7 @@ class TestElasticsearchIndexExtractor(unittest.TestCase):
         result = []
 
         while True:
-            entry = extractor.extract()
-
-            if entry:
+            if entry := extractor.extract():
                 result.append(entry)
             else:
                 break
@@ -214,9 +212,7 @@ class TestElasticsearchIndexExtractor(unittest.TestCase):
         result = []
 
         while True:
-            entry = extractor.extract()
-
-            if entry:
+            if entry := extractor.extract():
                 result.append(entry)
             else:
                 break
@@ -237,9 +233,7 @@ class TestElasticsearchIndexExtractor(unittest.TestCase):
         result = []
 
         while True:
-            entry = extractor.extract()
-
-            if entry:
+            if entry := extractor.extract():
                 result.append(entry)
             else:
                 break
@@ -260,9 +254,7 @@ class TestElasticsearchIndexExtractor(unittest.TestCase):
         result = []
 
         while True:
-            entry = extractor.extract()
-
-            if entry:
+            if entry := extractor.extract():
                 result.append(entry)
             else:
                 break
@@ -283,9 +275,7 @@ class TestElasticsearchIndexExtractor(unittest.TestCase):
         result = []
 
         while True:
-            entry = extractor.extract()
-
-            if entry:
+            if entry := extractor.extract():
                 result.append(entry)
             else:
                 break
@@ -306,9 +296,7 @@ class TestElasticsearchIndexExtractor(unittest.TestCase):
         result = []
 
         while True:
-            entry = extractor.extract()
-
-            if entry:
+            if entry := extractor.extract():
                 result.append(entry)
             else:
                 break

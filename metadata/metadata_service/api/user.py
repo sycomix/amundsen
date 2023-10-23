@@ -36,15 +36,14 @@ class UserDetailAPI(BaseAPI):
 
     @swag_from('swagger_doc/user/detail_get.yml')
     def get(self, *, id: Optional[str] = None) -> Iterable[Union[Mapping, int, None]]:
-        if app.config['USER_DETAIL_METHOD']:
-            try:
-                user_data = app.config['USER_DETAIL_METHOD'](id)
-                return UserSchema().dump(user_data), HTTPStatus.OK
-            except Exception:
-                LOGGER.exception('UserDetailAPI GET Failed - Using "USER_DETAIL_METHOD" config variable')
-                return {'message': 'user_id {} fetch failed'.format(id)}, HTTPStatus.NOT_FOUND
-        else:
+        if not app.config['USER_DETAIL_METHOD']:
             return super().get(id=id)
+        try:
+            user_data = app.config['USER_DETAIL_METHOD'](id)
+            return UserSchema().dump(user_data), HTTPStatus.OK
+        except Exception:
+            LOGGER.exception('UserDetailAPI GET Failed - Using "USER_DETAIL_METHOD" config variable')
+            return {'message': f'user_id {id} fetch failed'}, HTTPStatus.NOT_FOUND
 
     @swag_from('swagger_doc/user/detail_put.yml')
     def put(self) -> Iterable[Union[Mapping, int, None]]:
@@ -67,7 +66,7 @@ class UserDetailAPI(BaseAPI):
             return schema.dumps(new_user), resp_code
 
         except SchemaValidationError as schema_err:
-            err_msg = 'User inputs provided are not valid: %s' % schema_err
+            err_msg = f'User inputs provided are not valid: {schema_err}'
             return {'message': err_msg}, HTTPStatus.BAD_REQUEST
 
         except Exception:
@@ -120,7 +119,7 @@ class UserFollowsAPI(Resource):
 
         except NotFoundException as e:
             LOGGER.exception(e)
-            return {'message': 'user_id {} does not exist'.format(user_id)}, HTTPStatus.NOT_FOUND
+            return {'message': f'user_id {user_id} does not exist'}, HTTPStatus.NOT_FOUND
 
         except Exception:
             LOGGER.exception('UserFollowAPI GET Failed')
@@ -151,16 +150,14 @@ class UserFollowAPI(Resource):
                                                       relation_type=UserResourceRel.follow,
                                                       resource_type=to_resource_type(label=resource_type))
 
-            return {'message': 'The user {} for id {} resource type {} '
-                               'is added successfully'.format(user_id,
-                                                              resource_id,
-                                                              resource_type)}, HTTPStatus.OK
+            return {
+                'message': f'The user {user_id} for id {resource_id} resource type {resource_type} is added successfully'
+            }, HTTPStatus.OK
         except Exception as e:
             LOGGER.exception('UserFollowAPI PUT Failed')
-            return {'message': 'The user {} for id {} resource type {}'
-                               'is not added successfully'.format(user_id,
-                                                                  resource_id,
-                                                                  resource_type)}, HTTPStatus.INTERNAL_SERVER_ERROR
+            return {
+                'message': f'The user {user_id} for id {resource_id} resource type {resource_type}is not added successfully'
+            }, HTTPStatus.INTERNAL_SERVER_ERROR
 
     @swag_from('swagger_doc/user/follow_delete.yml')
     def delete(self, user_id: str, resource_type: str, resource_id: str) -> Iterable[Union[Mapping, int, None]]:
@@ -176,16 +173,14 @@ class UserFollowAPI(Resource):
                                                          user_id=user_id,
                                                          relation_type=UserResourceRel.follow,
                                                          resource_type=to_resource_type(label=resource_type))
-            return {'message': 'The user following {} for id {} resource type {} '
-                               'is deleted successfully'.format(user_id,
-                                                                resource_id,
-                                                                resource_type)}, HTTPStatus.OK
+            return {
+                'message': f'The user following {user_id} for id {resource_id} resource type {resource_type} is deleted successfully'
+            }, HTTPStatus.OK
         except Exception as e:
             LOGGER.exception('UserFollowAPI DELETE Failed')
-            return {'message': 'The user {} for id {} resource type {} '
-                               'is not deleted successfully'.format(user_id,
-                                                                    resource_id,
-                                                                    resource_type)}, HTTPStatus.INTERNAL_SERVER_ERROR
+            return {
+                'message': f'The user {user_id} for id {resource_id} resource type {resource_type} is not deleted successfully'
+            }, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 class UserOwnsAPI(Resource):
@@ -226,7 +221,7 @@ class UserOwnsAPI(Resource):
             return result, HTTPStatus.OK
 
         except NotFoundException:
-            return {'message': 'user_id {} does not exist'.format(user_id)}, HTTPStatus.NOT_FOUND
+            return {'message': f'user_id {user_id} does not exist'}, HTTPStatus.NOT_FOUND
 
         except Exception:
             LOGGER.exception('UserOwnAPI GET Failed')
@@ -255,27 +250,27 @@ class UserOwnAPI(Resource):
         """
         try:
             self.client.add_owner(table_uri=table_uri, owner=user_id)
-            return {'message': 'The owner {} for table_uri {} '
-                               'is added successfully'.format(user_id,
-                                                              table_uri)}, HTTPStatus.OK
+            return {
+                'message': f'The owner {user_id} for table_uri {table_uri} is added successfully'
+            }, HTTPStatus.OK
         except Exception as e:
             LOGGER.exception('UserOwnAPI PUT Failed')
-            return {'message': 'The owner {} for table_uri {} '
-                               'is not added successfully'.format(user_id,
-                                                                  table_uri)}, HTTPStatus.INTERNAL_SERVER_ERROR
+            return {
+                'message': f'The owner {user_id} for table_uri {table_uri} is not added successfully'
+            }, HTTPStatus.INTERNAL_SERVER_ERROR
 
     @swag_from('swagger_doc/user/own_delete.yml')
     def delete(self, user_id: str, resource_type: str, table_uri: str) -> Iterable[Union[Mapping, int, None]]:
         try:
             self.client.delete_owner(table_uri=table_uri, owner=user_id)
-            return {'message': 'The owner {} for table_uri {} '
-                               'is deleted successfully'.format(user_id,
-                                                                table_uri)}, HTTPStatus.OK
+            return {
+                'message': f'The owner {user_id} for table_uri {table_uri} is deleted successfully'
+            }, HTTPStatus.OK
         except Exception:
             LOGGER.exception('UserOwnAPI DELETE Failed')
-            return {'message': 'The owner {} for table_uri {} '
-                               'is not deleted successfully'.format(user_id,
-                                                                    table_uri)}, HTTPStatus.INTERNAL_SERVER_ERROR
+            return {
+                'message': f'The owner {user_id} for table_uri {table_uri} is not deleted successfully'
+            }, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 class UserReadsAPI(Resource):
@@ -301,7 +296,7 @@ class UserReadsAPI(Resource):
             return {'table': []}, HTTPStatus.OK
 
         except NotFoundException:
-            return {'message': 'user_id {} does not exist'.format(user_id)}, HTTPStatus.NOT_FOUND
+            return {'message': f'user_id {user_id} does not exist'}, HTTPStatus.NOT_FOUND
 
         except Exception:
             LOGGER.exception('UserReadsAPI GET Failed')

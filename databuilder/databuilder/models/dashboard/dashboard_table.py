@@ -69,28 +69,26 @@ class DashboardTable(GraphSerializable, TableSerializable, AtlasSerializable):
 
     def _create_relation_iterator(self) -> Iterator[GraphRelationship]:
         for table_id in self._table_ids:
-            m = re.match(r'([^./]+)://([^./]+)\.([^./]+)\/([^./]+)', table_id)
-            if m:
-                relationship = GraphRelationship(
+            if m := re.match(r'([^./]+)://([^./]+)\.([^./]+)\/([^./]+)', table_id):
+                yield GraphRelationship(
                     start_label=DashboardMetadata.DASHBOARD_NODE_LABEL,
                     end_label=TableMetadata.TABLE_NODE_LABEL,
                     start_key=DashboardMetadata.DASHBOARD_KEY_FORMAT.format(
                         product=self._product,
                         cluster=self._cluster,
                         dashboard_group=self._dashboard_group_id,
-                        dashboard_name=self._dashboard_id
+                        dashboard_name=self._dashboard_id,
                     ),
                     end_key=TableMetadata.TABLE_KEY_FORMAT.format(
                         db=m.group(1),
                         cluster=m.group(2),
                         schema=m.group(3),
-                        tbl=m.group(4)
+                        tbl=m.group(4),
                     ),
                     type=DashboardTable.DASHBOARD_TABLE_RELATION_TYPE,
                     reverse_type=DashboardTable.TABLE_DASHBOARD_RELATION_TYPE,
-                    attributes={}
+                    attributes={},
                 )
-                yield relationship
 
     def create_next_record(self) -> Union[RDSModel, None]:
         try:
@@ -100,8 +98,7 @@ class DashboardTable(GraphSerializable, TableSerializable, AtlasSerializable):
 
     def _create_record_iterator(self) -> Iterator[RDSModel]:
         for table_id in self._table_ids:
-            m = re.match(r'([^./]+)://([^./]+)\.([^./]+)\/([^./]+)', table_id)
-            if m:
+            if m := re.match(r'([^./]+)://([^./]+)\.([^./]+)\/([^./]+)', table_id):
                 yield RDSDashboardTable(
                     dashboard_rk=DashboardMetadata.DASHBOARD_KEY_FORMAT.format(
                         product=self._product,
@@ -130,7 +127,7 @@ class DashboardTable(GraphSerializable, TableSerializable, AtlasSerializable):
         for table_id in self._table_ids:
             key = AtlasTableKey(table_id)
 
-            table_relationship = AtlasRelationship(
+            yield AtlasRelationship(
                 relationshipType=AtlasRelationshipTypes.table_dashboard,
                 entityType1=AtlasTableTypes.table,
                 entityQualifiedName1=key.qualified_name,
@@ -139,11 +136,10 @@ class DashboardTable(GraphSerializable, TableSerializable, AtlasSerializable):
                     product=self._product,
                     cluster=self._cluster,
                     dashboard_group=self._dashboard_group_id,
-                    dashboard_name=self._dashboard_id
+                    dashboard_name=self._dashboard_id,
                 ),
-                attributes={}
+                attributes={},
             )
-            yield table_relationship
 
     def __repr__(self) -> str:
         return f'DashboardTable({self._dashboard_group_id!r}, {self._dashboard_id!r}, ' \

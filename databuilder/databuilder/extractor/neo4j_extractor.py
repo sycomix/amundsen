@@ -71,7 +71,7 @@ class Neo4jExtractor(Extractor):
         encrypted_conf = self.conf.get(Neo4jExtractor.NEO4J_ENCRYPTED, None)
         if validate_ssl_conf is not None:
             driver_args['trust'] = neo4j.TRUST_SYSTEM_CA_SIGNED_CERTIFICATES if validate_ssl_conf \
-                else neo4j.TRUST_ALL_CERTIFICATES
+                    else neo4j.TRUST_ALL_CERTIFICATES
         if encrypted_conf is not None:
             driver_args['encrypted'] = encrypted_conf
 
@@ -79,8 +79,9 @@ class Neo4jExtractor(Extractor):
 
         self._extract_iter: Union[None, Iterator] = None
 
-        model_class = self.conf.get(Neo4jExtractor.MODEL_CLASS_CONFIG_KEY, None)
-        if model_class:
+        if model_class := self.conf.get(
+            Neo4jExtractor.MODEL_CLASS_CONFIG_KEY, None
+        ):
             module_name, class_name = model_class.rsplit(".", 1)
             mod = importlib.import_module(module_name)
             self.model_class = getattr(mod, class_name)
@@ -100,22 +101,21 @@ class Neo4jExtractor(Extractor):
         """
         LOGGER.info('Executing query %s', self.cypher_query)
         result = tx.run(self.cypher_query)
-        return [record for record in result]
+        return list(result)
 
     def _get_extract_iter(self) -> Iterator[Any]:
         """
         Execute {cypher_query} and yield result one at a time
         """
         with self.driver.session(
-            database=self.db_name
-        ) as session:
+                database=self.db_name
+            ) as session:
             if not hasattr(self, 'results'):
                 self.results = session.read_transaction(self._execute_query)
 
             for result in self.results:
                 if hasattr(self, 'model_class'):
-                    obj = self.model_class(**result)
-                    yield obj
+                    yield self.model_class(**result)
                 else:
                     yield result
 

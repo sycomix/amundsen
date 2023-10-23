@@ -89,11 +89,9 @@ class TestElasticsearchWatermarkBlizzExtractor(unittest.TestCase):
             return self.indices_watermarks[index]
 
     def _get_indices_meta(self, index_names: List[str]) -> Dict:
-        indices_meta = {}
-        for index_name in index_names:
-            indices_meta[index_name] = self.indices_meta[index_name]
-
-        return indices_meta
+        return {
+            index_name: self.indices_meta[index_name] for index_name in index_names
+        }
 
     def _get_config(self, index_names: List[str]) -> Any:
         return ConfigFactory.from_dict({
@@ -115,8 +113,7 @@ class TestElasticsearchWatermarkBlizzExtractor(unittest.TestCase):
         result = []
 
         while True:
-            entry = extractor.extract()
-            if entry:
+            if entry := extractor.extract():
                 result.append(entry)
             else:
                 break

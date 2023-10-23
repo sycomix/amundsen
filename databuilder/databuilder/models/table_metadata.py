@@ -80,26 +80,19 @@ class TagMetadata(GraphSerializable, TableSerializable, AtlasSerializable):
 
     @staticmethod
     def get_tag_key(name: str) -> str:
-        if not name:
-            return ''
-        return TagMetadata.TAG_KEY_FORMAT.format(tag=name)
+        return '' if not name else TagMetadata.TAG_KEY_FORMAT.format(tag=name)
 
     def get_node(self) -> GraphNode:
-        node = GraphNode(
+        return GraphNode(
             key=TagMetadata.get_tag_key(self._name),
             label=TagMetadata.TAG_NODE_LABEL,
-            attributes={
-                TagMetadata.TAG_TYPE: self._tag_type
-            }
+            attributes={TagMetadata.TAG_TYPE: self._tag_type},
         )
-        return node
 
     def get_record(self) -> RDSModel:
-        record = RDSTag(
-            rk=TagMetadata.get_tag_key(self._name),
-            tag_type=self._tag_type
+        return RDSTag(
+            rk=TagMetadata.get_tag_key(self._name), tag_type=self._tag_type
         )
-        return record
 
     def create_next_node(self) -> Optional[GraphNode]:
         # return the string representation of the data
@@ -122,16 +115,13 @@ class TagMetadata(GraphSerializable, TableSerializable, AtlasSerializable):
             return None
 
     def _create_node_iterator(self) -> Iterator[GraphNode]:
-        node = self.get_node()
-        yield node
+        yield self.get_node()
 
     def _create_relation_iterator(self) -> Iterator[GraphRelationship]:
         return
-        yield
 
     def _create_record_iterator(self) -> Iterator[RDSModel]:
-        record = self.get_record()
-        yield record
+        yield self.get_record()
 
     def _create_atlas_glossary_entity(self) -> AtlasEntity:
         attrs_mapping = [
@@ -142,26 +132,22 @@ class TagMetadata(GraphSerializable, TableSerializable, AtlasSerializable):
 
         entity_attrs = get_entity_attrs(attrs_mapping)
 
-        entity = AtlasEntity(
+        return AtlasEntity(
             typeName=AtlasCommonTypes.tag,
             operation=AtlasSerializedEntityOperation.CREATE,
             attributes=entity_attrs,
-            relationships=None
+            relationships=None,
         )
 
-        return entity
-
     def create_atlas_tag_relation(self, table_key: str) -> AtlasRelationship:
-        table_relationship = AtlasRelationship(
+        return AtlasRelationship(
             relationshipType=AtlasRelationshipTypes.tag,
             entityType1=AtlasCommonTypes.data_set,
             entityQualifiedName1=table_key,
             entityType2=AtlasRelationshipTypes.tag,
             entityQualifiedName2=f'glossary={self._tag_type},term={self._name}',
-            attributes={}
+            attributes={},
         )
-
-        return table_relationship
 
     def create_next_atlas_relation(self) -> Union[AtlasRelationship, None]:
         pass
@@ -384,9 +370,7 @@ class TableMetadata(GraphSerializable, TableSerializable, AtlasSerializable):
         # Create the table tag nodes
         if self.tags:
             for tag in self.tags:
-                tag_node = TagMetadata(tag).get_node()
-                yield tag_node
-
+                yield TagMetadata(tag).get_node()
         for col in self.columns:
             yield from self._create_column_nodes(col)
 
@@ -437,17 +421,15 @@ class TableMetadata(GraphSerializable, TableSerializable, AtlasSerializable):
         )
 
     def _create_column_nodes(self, col: ColumnMetadata) -> Iterator[GraphNode]:
-        column_node = GraphNode(
+        yield GraphNode(
             key=self._get_col_key(col),
             label=ColumnMetadata.COLUMN_NODE_LABEL,
             attributes={
                 ColumnMetadata.COLUMN_NAME: col.name,
                 ColumnMetadata.COLUMN_TYPE: col.type,
-                ColumnMetadata.COLUMN_ORDER: col.sort_order
-            }
+                ColumnMetadata.COLUMN_ORDER: col.sort_order,
+            },
         )
-        yield column_node
-
         if col.description:
             node_key = self._get_col_description_key(col, col.description)
             yield col.description.get_node(node_key)
@@ -457,12 +439,8 @@ class TableMetadata(GraphSerializable, TableSerializable, AtlasSerializable):
                 start_label=ColumnMetadata.COLUMN_NODE_LABEL,
                 start_key=self._get_col_key(col),
                 badges=col.badges)
-            badge_nodes = col_badge_metadata.get_badge_nodes()
-            for node in badge_nodes:
-                yield node
-
-        type_metadata = col.get_type_metadata()
-        if type_metadata:
+            yield from col_badge_metadata.get_badge_nodes()
+        if type_metadata := col.get_type_metadata():
             yield from type_metadata.create_node_iterator()
 
     def create_next_relation(self) -> Union[GraphRelationship, None]:
@@ -472,17 +450,15 @@ class TableMetadata(GraphSerializable, TableSerializable, AtlasSerializable):
             return None
 
     def _create_next_relation(self) -> Iterator[GraphRelationship]:
-        schema_table_relationship = GraphRelationship(
+        yield GraphRelationship(
             start_key=self._get_schema_key(),
             start_label=TableMetadata.SCHEMA_NODE_LABEL,
             end_key=self._get_table_key(),
             end_label=TableMetadata.TABLE_NODE_LABEL,
             type=TableMetadata.SCHEMA_TABLE_RELATION_TYPE,
             reverse_type=TableMetadata.TABLE_SCHEMA_RELATION_TYPE,
-            attributes={}
+            attributes={},
         )
-        yield schema_table_relationship
-
         if self.description:
             yield self.description.get_relation(TableMetadata.TABLE_NODE_LABEL,
                                                 self._get_table_key(),
@@ -490,17 +466,15 @@ class TableMetadata(GraphSerializable, TableSerializable, AtlasSerializable):
 
         if self.tags:
             for tag in self.tags:
-                tag_relationship = GraphRelationship(
+                yield GraphRelationship(
                     start_label=TableMetadata.TABLE_NODE_LABEL,
                     start_key=self._get_table_key(),
                     end_label=TagMetadata.TAG_NODE_LABEL,
                     end_key=TagMetadata.get_tag_key(tag),
                     type=TableMetadata.TABLE_TAG_RELATION_TYPE,
                     reverse_type=TableMetadata.TAG_TABLE_RELATION_TYPE,
-                    attributes={}
+                    attributes={},
                 )
-                yield tag_relationship
-
         for col in self.columns:
             yield from self._create_column_relations(col)
 
@@ -531,17 +505,15 @@ class TableMetadata(GraphSerializable, TableSerializable, AtlasSerializable):
                 yield rel_tuple
 
     def _create_column_relations(self, col: ColumnMetadata) -> Iterator[GraphRelationship]:
-        column_relationship = GraphRelationship(
+        yield GraphRelationship(
             start_label=TableMetadata.TABLE_NODE_LABEL,
             start_key=self._get_table_key(),
             end_label=ColumnMetadata.COLUMN_NODE_LABEL,
             end_key=self._get_col_key(col),
             type=TableMetadata.TABLE_COL_RELATION_TYPE,
             reverse_type=TableMetadata.COL_TABLE_RELATION_TYPE,
-            attributes={}
+            attributes={},
         )
-        yield column_relationship
-
         if col.description:
             yield col.description.get_relation(
                 ColumnMetadata.COLUMN_NODE_LABEL,
@@ -553,12 +525,8 @@ class TableMetadata(GraphSerializable, TableSerializable, AtlasSerializable):
             badge_metadata = BadgeMetadata(start_label=ColumnMetadata.COLUMN_NODE_LABEL,
                                            start_key=self._get_col_key(col),
                                            badges=col.badges)
-            badge_relations = badge_metadata.get_badge_relations()
-            for relation in badge_relations:
-                yield relation
-
-        type_metadata = col.get_type_metadata()
-        if type_metadata:
+            yield from badge_metadata.get_badge_relations()
+        if type_metadata := col.get_type_metadata():
             yield from type_metadata.create_relation_iterator()
 
     def create_next_record(self) -> Union[RDSModel, None]:
@@ -619,15 +587,10 @@ class TableMetadata(GraphSerializable, TableSerializable, AtlasSerializable):
 
         # Tag
         for tag in self.tags:
-            tag_record = TagMetadata(tag).get_record()
-            yield tag_record
-
-            table_tag_record = RDSTableTag(
-                table_rk=self._get_table_key(),
-                tag_rk=TagMetadata.get_tag_key(tag)
+            yield TagMetadata(tag).get_record()
+            yield RDSTableTag(
+                table_rk=self._get_table_key(), tag_rk=TagMetadata.get_tag_key(tag)
             )
-            yield table_tag_record
-
         # Column
         for col in self.columns:
             yield RDSTableColumn(
@@ -658,11 +621,9 @@ class TableMetadata(GraphSerializable, TableSerializable, AtlasSerializable):
                 for badge_record in badge_records:
                     yield badge_record
 
-                    column_badge_record = RDSColumnBadge(
-                        column_rk=self._get_col_key(col),
-                        badge_rk=badge_record.rk
+                    yield RDSColumnBadge(
+                        column_rk=self._get_col_key(col), badge_rk=badge_record.rk
                     )
-                    yield column_badge_record
 
     def _create_atlas_cluster_entity(self) -> AtlasEntity:
         attrs_mapping = [
@@ -673,14 +634,12 @@ class TableMetadata(GraphSerializable, TableSerializable, AtlasSerializable):
 
         entity_attrs = get_entity_attrs(attrs_mapping)
 
-        entity = AtlasEntity(
+        return AtlasEntity(
             typeName=AtlasCommonTypes.cluster,
             operation=AtlasSerializedEntityOperation.CREATE,
             attributes=entity_attrs,
-            relationships=None
+            relationships=None,
         )
-
-        return entity
 
     def _create_atlas_database_entity(self) -> AtlasEntity:
         attrs_mapping = [
@@ -700,14 +659,12 @@ class TableMetadata(GraphSerializable, TableSerializable, AtlasSerializable):
             self._get_cluster_key()
         )
 
-        entity = AtlasEntity(
+        return AtlasEntity(
             typeName=AtlasTableTypes.database,
             operation=AtlasSerializedEntityOperation.CREATE,
             attributes=entity_attrs,
-            relationships=get_entity_relationships(relationship_list)
+            relationships=get_entity_relationships(relationship_list),
         )
-
-        return entity
 
     def _create_atlas_schema_entity(self) -> AtlasEntity:
         attrs_mapping = [
@@ -727,14 +684,12 @@ class TableMetadata(GraphSerializable, TableSerializable, AtlasSerializable):
             self._get_cluster_key()
         )
 
-        entity = AtlasEntity(
+        return AtlasEntity(
             typeName=AtlasTableTypes.schema,
             operation=AtlasSerializedEntityOperation.CREATE,
             attributes=entity_attrs,
-            relationships=get_entity_relationships(relationship_list)
+            relationships=get_entity_relationships(relationship_list),
         )
-
-        return entity
 
     def _create_atlas_table_entity(self) -> AtlasEntity:
         table_type = 'table' if not self.is_view else 'view'
@@ -758,14 +713,12 @@ class TableMetadata(GraphSerializable, TableSerializable, AtlasSerializable):
             self._get_schema_key()
         )
 
-        entity = AtlasEntity(
+        return AtlasEntity(
             typeName=AtlasTableTypes.table,
             operation=AtlasSerializedEntityOperation.CREATE,
             attributes=entity_attrs,
-            relationships=get_entity_relationships(relationship_list)
+            relationships=get_entity_relationships(relationship_list),
         )
-
-        return entity
 
     def _create_atlas_column_entity(self, column_metadata: ColumnMetadata) -> AtlasEntity:
         qualified_name = column_metadata.COLUMN_KEY_FORMAT.format(db=self.database,
@@ -793,22 +746,19 @@ class TableMetadata(GraphSerializable, TableSerializable, AtlasSerializable):
             self._get_table_key()
         )
 
-        entity = AtlasEntity(
+        return AtlasEntity(
             typeName=AtlasTableTypes.column,
             operation=AtlasSerializedEntityOperation.CREATE,
             attributes=entity_attrs,
-            relationships=get_entity_relationships(relationship_list)
+            relationships=get_entity_relationships(relationship_list),
         )
-
-        return entity
 
     def _create_next_atlas_relation(self) -> Iterator[AtlasRelationship]:
         pass
 
     def _create_atlas_relation_iterator(self) -> Iterator[AtlasRelationship]:
         for tag in self.tags:
-            tag_relation = TagMetadata(tag).create_atlas_tag_relation(self._get_table_key())
-            yield tag_relation
+            yield TagMetadata(tag).create_atlas_tag_relation(self._get_table_key())
 
     def create_next_atlas_relation(self) -> Union[AtlasRelationship, None]:
         try:
@@ -827,8 +777,7 @@ class TableMetadata(GraphSerializable, TableSerializable, AtlasSerializable):
 
         if self.tags:
             for tag in self.tags:
-                tag_entity = TagMetadata(tag).create_next_atlas_entity()
-                if tag_entity:
+                if tag_entity := TagMetadata(tag).create_next_atlas_entity():
                     yield tag_entity
 
     def create_next_atlas_entity(self) -> Union[AtlasEntity, None]:

@@ -34,13 +34,11 @@ class BaseProxy(metaclass=ABCMeta):
         :return: a dictionary of user details
         """
         if app.config.get('USER_DETAIL_METHOD'):
-            user_details = app.config.get('USER_DETAIL_METHOD')(user_id)  # type: ignore
+            return app.config.get('USER_DETAIL_METHOD')(user_id)
         elif user_data:
-            user_details = user_data
+            return user_data
         else:
-            user_details = {'email': user_id, 'user_id': user_id}
-
-        return user_details
+            return {'email': user_id, 'user_id': user_id}
 
     def health(self) -> HealthCheck:
         return HealthCheck(status='ok', checks={f'{type(self).__name__}:connection': {'status': 'not checked'}})

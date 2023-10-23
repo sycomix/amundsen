@@ -35,7 +35,7 @@ class PreviewTest(unittest.TestCase):
             response = test.post('/api/preview/v0/')
             self.assertEqual(response.status_code, HTTPStatus.NOT_IMPLEMENTED)
 
-    @unittest.mock.patch(PREVIEW_CLIENT_CLASS + '.get_preview_data')
+    @unittest.mock.patch(f'{PREVIEW_CLIENT_CLASS}.get_preview_data')
     def test_good_client_response(self, mock_get_preview_data: unittest.mock.Mock) -> None:
         """
         """
@@ -55,7 +55,7 @@ class PreviewTest(unittest.TestCase):
             self.assertEqual(post_response.status_code, HTTPStatus.OK)
             self.assertEqual(post_response.json, expected_response_json)
 
-    @unittest.mock.patch(PREVIEW_CLIENT_CLASS + '.get_preview_data')
+    @unittest.mock.patch(f'{PREVIEW_CLIENT_CLASS}.get_preview_data')
     def test_bad_client_response(self, mock_get_preview_data: unittest.mock.Mock) -> None:
         """
         """
@@ -74,7 +74,7 @@ class PreviewTest(unittest.TestCase):
                              HTTPStatus.INTERNAL_SERVER_ERROR)
             self.assertEqual(post_response.json, expected_response_json)
 
-    @unittest.mock.patch(PREVIEW_CLIENT_CLASS + '.get_feature_preview_data')
+    @unittest.mock.patch(f'{PREVIEW_CLIENT_CLASS}.get_feature_preview_data')
     def test_good_client_response_feature(self, mock_get_preview_data: unittest.mock.Mock) -> None:
         """
         """
@@ -94,7 +94,7 @@ class PreviewTest(unittest.TestCase):
             self.assertEqual(post_response.status_code, HTTPStatus.OK)
             self.assertEqual(post_response.json, expected_response_json)
 
-    @unittest.mock.patch(PREVIEW_CLIENT_CLASS + '.get_feature_preview_data')
+    @unittest.mock.patch(f'{PREVIEW_CLIENT_CLASS}.get_feature_preview_data')
     def test_bad_client_response_feature(self, mock_get_preview_data: unittest.mock.Mock) -> None:
         """
         """

@@ -134,9 +134,7 @@ class User(GraphSerializable, TableSerializable, AtlasSerializable):
     def get_user_model_key(cls,
                            email: str = None
                            ) -> str:
-        if not email:
-            return ''
-        return User.USER_NODE_KEY_FORMAT.format(email=email)
+        return '' if not email else User.USER_NODE_KEY_FORMAT.format(email=email)
 
     def get_user_node(self) -> GraphNode:
         node_attributes = {
@@ -168,13 +166,11 @@ class User(GraphSerializable, TableSerializable, AtlasSerializable):
                 if not v:
                     del node_attributes[k]
 
-        node = GraphNode(
+        return GraphNode(
             key=User.get_user_model_key(email=self.email),
             label=User.USER_NODE_LABEL,
-            attributes=node_attributes
+            attributes=node_attributes,
         )
-
-        return node
 
     def get_user_record(self) -> RDSModel:
         record_attr_map = {
@@ -209,26 +205,22 @@ class User(GraphSerializable, TableSerializable, AtlasSerializable):
         Create an user node
         :return:
         """
-        user_node = self.get_user_node()
-        yield user_node
+        yield self.get_user_node()
 
     def _create_relation_iterator(self) -> Iterator[GraphRelationship]:
         if self.manager_email:
-            # only create the relation if the manager exists
-            relationship = GraphRelationship(
+            yield GraphRelationship(
                 start_key=User.get_user_model_key(email=self.email),
                 start_label=User.USER_NODE_LABEL,
                 end_label=User.USER_NODE_LABEL,
                 end_key=self.get_user_model_key(email=self.manager_email),
                 type=User.USER_MANAGER_RELATION_TYPE,
                 reverse_type=User.MANAGER_USER_RELATION_TYPE,
-                attributes={}
+                attributes={},
             )
-            yield relationship
 
     def _create_record_iterator(self) -> Iterator[RDSModel]:
-        user_record = self.get_user_record()
-        yield user_record
+        yield self.get_user_record()
 
     def _create_atlas_user_entity(self) -> AtlasEntity:
         attrs_mapping = [
@@ -251,14 +243,12 @@ class User(GraphSerializable, TableSerializable, AtlasSerializable):
 
         entity_attrs = get_entity_attrs(attrs_mapping)
 
-        entity = AtlasEntity(
+        return AtlasEntity(
             typeName=AtlasCommonTypes.user,
             operation=AtlasSerializedEntityOperation.CREATE,
             attributes=entity_attrs,
-            relationships=None
+            relationships=None,
         )
-
-        return entity
 
     def create_next_atlas_relation(self) -> Union[AtlasRelationship, None]:
         pass

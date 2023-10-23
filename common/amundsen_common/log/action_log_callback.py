@@ -28,7 +28,7 @@ def register_pre_exec_callback(action_log_callback: Callable[..., Any]) -> None:
     :param action_logger: An action logger callback function
     :return: None
     """
-    LOGGER.debug("Adding {} to pre execution callback".format(action_log_callback))
+    LOGGER.debug(f"Adding {action_log_callback} to pre execution callback")
     __pre_exec_callbacks.append(action_log_callback)
 
 
@@ -40,7 +40,7 @@ def register_post_exec_callback(action_log_callback: Callable[..., Any]) -> None
     :param action_logger: An action logger callback function
     :return: None
     """
-    LOGGER.debug("Adding {} to post execution callback".format(action_log_callback))
+    LOGGER.debug(f"Adding {action_log_callback} to post execution callback")
     __post_exec_callbacks.append(action_log_callback)
 
 
@@ -51,12 +51,14 @@ def on_pre_execution(action_log_params: ActionLogParams) -> None:
     :param kwargs:
     :return: None
     """
-    LOGGER.debug("Calling callbacks: {}".format(__pre_exec_callbacks))
+    LOGGER.debug(f"Calling callbacks: {__pre_exec_callbacks}")
     for call_back_function in __pre_exec_callbacks:
         try:
             call_back_function(action_log_params)
         except Exception:
-            logging.exception('Failed on pre-execution callback using {}'.format(call_back_function))
+            logging.exception(
+                f'Failed on pre-execution callback using {call_back_function}'
+            )
 
 
 def on_post_execution(action_log_params: ActionLogParams) -> None:
@@ -67,12 +69,14 @@ def on_post_execution(action_log_params: ActionLogParams) -> None:
     :param kwargs:
     :return: None
     """
-    LOGGER.debug("Calling callbacks: {}".format(__post_exec_callbacks))
+    LOGGER.debug(f"Calling callbacks: {__post_exec_callbacks}")
     for call_back_function in __post_exec_callbacks:
         try:
             call_back_function(action_log_params)
         except Exception:
-            logging.exception('Failed on post-execution callback using {}'.format(call_back_function))
+            logging.exception(
+                f'Failed on post-execution callback using {call_back_function}'
+            )
 
 
 def logging_action_log(action_log_params: ActionLogParams) -> None:
@@ -82,7 +86,7 @@ def logging_action_log(action_log_params: ActionLogParams) -> None:
     :return: None
     """
     if LOGGER.isEnabledFor(logging.DEBUG):
-        LOGGER.debug('logging_action_log: {}'.format(action_log_params))
+        LOGGER.debug(f'logging_action_log: {action_log_params}')
 
 
 def register_action_logs() -> None:
@@ -93,11 +97,17 @@ def register_action_logs() -> None:
     :return: None
     """
     for entry_point in iter_entry_points(group='action_log.post_exec.plugin', name=None):
-        print('Registering post_exec action_log entry_point: {}'.format(entry_point), file=sys.stderr)
+        print(
+            f'Registering post_exec action_log entry_point: {entry_point}',
+            file=sys.stderr,
+        )
         register_post_exec_callback(entry_point.load())
 
     for entry_point in iter_entry_points(group='action_log.pre_exec.plugin', name=None):
-        print('Registering pre_exec action_log entry_point: {}'.format(entry_point), file=sys.stderr)
+        print(
+            f'Registering pre_exec action_log entry_point: {entry_point}',
+            file=sys.stderr,
+        )
         register_pre_exec_callback(entry_point.load())
 
 

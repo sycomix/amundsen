@@ -68,15 +68,14 @@ class DashboardExecution(GraphSerializable, TableSerializable, AtlasSerializable
             return None
 
     def _create_node_iterator(self) -> Iterator[GraphNode]:
-        node = GraphNode(
+        yield GraphNode(
             key=self._get_last_execution_node_key(),
             label=DashboardExecution.DASHBOARD_EXECUTION_LABEL,
             attributes={
                 'timestamp': self._execution_timestamp,
-                'state': self._execution_state
-            }
+                'state': self._execution_state,
+            },
         )
-        yield node
 
     def create_next_relation(self) -> Union[GraphRelationship, None]:
         try:
@@ -85,21 +84,20 @@ class DashboardExecution(GraphSerializable, TableSerializable, AtlasSerializable
             return None
 
     def _create_relation_iterator(self) -> Iterator[GraphRelationship]:
-        relationship = GraphRelationship(
+        yield GraphRelationship(
             start_label=DashboardMetadata.DASHBOARD_NODE_LABEL,
             start_key=DashboardMetadata.DASHBOARD_KEY_FORMAT.format(
                 product=self._product,
                 cluster=self._cluster,
                 dashboard_group=self._dashboard_group_id,
-                dashboard_name=self._dashboard_id
+                dashboard_name=self._dashboard_id,
             ),
             end_label=DashboardExecution.DASHBOARD_EXECUTION_LABEL,
             end_key=self._get_last_execution_node_key(),
             type=DashboardExecution.DASHBOARD_EXECUTION_RELATION_TYPE,
             reverse_type=DashboardExecution.EXECUTION_DASHBOARD_RELATION_TYPE,
-            attributes={}
+            attributes={},
         )
-        yield relationship
 
     def create_next_record(self) -> Union[RDSModel, None]:
         try:
@@ -161,14 +159,12 @@ class DashboardExecution(GraphSerializable, TableSerializable, AtlasSerializable
             )
         )
 
-        execution_entity = AtlasEntity(
+        yield AtlasEntity(
             typeName=AtlasDashboardTypes.execution,
             operation=AtlasSerializedEntityOperation.CREATE,
             attributes=query_entity_attrs,
-            relationships=get_entity_relationships(relationship_list)
+            relationships=get_entity_relationships(relationship_list),
         )
-
-        yield execution_entity
 
     def __repr__(self) -> str:
         return f'DashboardExecution({self._dashboard_group_id!r}, {self._dashboard_id!r}, ' \

@@ -7,6 +7,7 @@ into Neo4j and Elasticsearch without using an Airflow DAG.
 
 """
 
+
 import logging
 import sys
 import textwrap
@@ -29,13 +30,8 @@ from databuilder.publisher.neo4j_csv_publisher import Neo4jCsvPublisher
 from databuilder.task.task import DefaultTask
 from databuilder.transformer.base_transformer import NoopTransformer
 
-es_host = None
-neo_host = None
-if len(sys.argv) > 1:
-    es_host = sys.argv[1]
-if len(sys.argv) > 2:
-    neo_host = sys.argv[2]
-
+es_host = sys.argv[1] if len(sys.argv) > 1 else None
+neo_host = sys.argv[2] if len(sys.argv) > 2 else None
 es = Elasticsearch(
     [
         {"host": es_host if es_host else "localhost"},
@@ -62,7 +58,7 @@ def connection_string():
     pwd = "password"
     host = "localhost"
     port = "1025"
-    return "teradatasql://%s:%s@%s:%s" % (user, pwd, host, port)
+    return f"teradatasql://{user}:{pwd}@{host}:{port}"
 
 
 def run_teradata_job():
@@ -92,14 +88,13 @@ def run_teradata_job():
             f"publisher.neo4j.{neo4j_csv_publisher.JOB_PUBLISH_TAG}": "unique_tag",
         }
     )
-    job = DefaultJob(
+    return DefaultJob(
         conf=job_config,
         task=DefaultTask(
             extractor=TeradataMetadataExtractor(), loader=FsNeo4jCSVLoader()
         ),
         publisher=Neo4jCsvPublisher(),
     )
-    return job
 
 
 def create_es_publisher_sample_job(
@@ -132,7 +127,7 @@ def create_es_publisher_sample_job(
     # elastic search client instance
     elasticsearch_client = es
     # unique name of new index in Elasticsearch
-    elasticsearch_new_index_key = "tables" + str(uuid.uuid4())
+    elasticsearch_new_index_key = f"tables{str(uuid.uuid4())}"
 
     job_config = ConfigFactory.from_dict(
         {
@@ -169,8 +164,9 @@ def create_es_publisher_sample_job(
             elasticsearch_mapping,
         )
 
-    job = DefaultJob(conf=job_config, task=task, publisher=ElasticsearchPublisher())
-    return job
+    return DefaultJob(
+        conf=job_config, task=task, publisher=ElasticsearchPublisher()
+    )
 
 
 if __name__ == "__main__":

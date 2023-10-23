@@ -118,14 +118,13 @@ class JiraClient(BaseIssueTrackerClient):
         :return: Metadata about the newly created issue
         """
         try:
-            if app.config['AUTH_USER_METHOD']:
-                user_email = app.config['AUTH_USER_METHOD'](app).email
-                # We currently cannot use the email directly because of the following issue:
-                # https://community.atlassian.com/t5/Answers-Developer-Questions/JIRA-Rest-API-find-JIRA-user-based-on-user-s-email-address/qaq-p/532715
-                jira_id = user_email.split('@')[0]
-            else:
+            if not app.config['AUTH_USER_METHOD']:
                 raise Exception('AUTH_USER_METHOD must be configured to set the JIRA issue reporter')
 
+            user_email = app.config['AUTH_USER_METHOD'](app).email
+            # We currently cannot use the email directly because of the following issue:
+            # https://community.atlassian.com/t5/Answers-Developer-Questions/JIRA-Rest-API-find-JIRA-user-based-on-user-s-email-address/qaq-p/532715
+            jira_id = user_email.split('@')[0]
             reporter = {'name': jira_id}
 
             # Detected by the jira client based on API version & deployment.
@@ -255,8 +254,7 @@ class JiraClient(BaseIssueTrackerClient):
             url = '{0}{1}/{2}'.format(app.config['METADATASERVICE_BASE'], USER_ENDPOINT, user_id)
             response = request_metadata(url=url)
             if response.status_code == HTTPStatus.OK:
-                user = load_user(response.json())
-                if user:
+                if user := load_user(response.json()):
                     users.append(user)
         return users
 
@@ -310,11 +308,11 @@ class JiraClient(BaseIssueTrackerClient):
         :return: String of frequent users to append in the description
         """
         frequent_users_description_str = '\n Frequent Users: ' if frequent_users else ''
-        user_details_list = []
-        for user in frequent_users:
-            if user.is_active and user.profile_url:
-                user_details_list.append((f'[{user.full_name if user.full_name else user.email}'
-                                          f'|{user.profile_url}]'))
+        user_details_list = [
+            f'[{user.full_name if user.full_name else user.email}|{user.profile_url}]'
+            for user in frequent_users
+            if user.is_active and user.profile_url
+        ]
         return frequent_users_description_str + ', '.join(user_details_list) if user_details_list else ''
 
     def _generate_all_table_users_description_str(self, owners_str: str, frequent_users_str: str) -> str:

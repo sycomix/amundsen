@@ -40,7 +40,7 @@ def get_table_notices_summary() -> Response:
         payload = jsonify({'notices': {}, 'msg': 'A client for retrieving resource notices must be configured'})
         return make_response(payload, HTTPStatus.NOT_IMPLEMENTED)
     except Exception as e:
-        message = 'Encountered exception: ' + str(e)
+        message = f'Encountered exception: {str(e)}'
         LOGGER.exception(message)
         payload = jsonify({'notices': {}, 'msg': message})
         return make_response(payload, HTTPStatus.INTERNAL_SERVER_ERROR)
@@ -56,7 +56,7 @@ def _get_table_notices_summary_client() -> Response:
             notices = json.loads(response.data).get('notices')
             payload = jsonify({'notices': notices, 'msg': 'Success'})
         except ValidationError as err:
-            LOGGER.info('Notices data dump returned errors: ' + str(err.messages))
+            LOGGER.info(f'Notices data dump returned errors: {str(err.messages)}')
             raise Exception(f"Notices client didn't return a valid ResourceNotice object. {err}")
     else:
         message = f'Encountered error: Notice client request failed with code {status_code}'

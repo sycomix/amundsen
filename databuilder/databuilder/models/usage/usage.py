@@ -44,7 +44,7 @@ class Usage(GraphSerializable, TableSerializable, AtlasSerializable):
         self.start_label = start_label
         self.start_key = start_key
         self.user_email = user_email.strip().lower()
-        self.read_count = int(read_count)
+        self.read_count = read_count
 
         self._node_iter = self._create_node_iterator()
         self._relation_iter = self._create_relation_iterator()
@@ -139,13 +139,12 @@ class Usage(GraphSerializable, TableSerializable, AtlasSerializable):
 
         entity_attrs = get_entity_attrs(attrs_mapping)
 
-        entity = AtlasEntity(
+        return AtlasEntity(
             typeName=AtlasCommonTypes.user,
             operation=AtlasSerializedEntityOperation.CREATE,
             attributes=entity_attrs,
-            relationships=None
+            relationships=None,
         )
-        return entity
 
     def _create_atlas_reader_entity(self) -> AtlasEntity:
         attrs_mapping = [
@@ -156,35 +155,32 @@ class Usage(GraphSerializable, TableSerializable, AtlasSerializable):
 
         entity_attrs = get_entity_attrs(attrs_mapping)
 
-        entity = AtlasEntity(
+        return AtlasEntity(
             typeName=AtlasCommonTypes.reader,
             operation=AtlasSerializedEntityOperation.CREATE,
             attributes=entity_attrs,
-            relationships=None
+            relationships=None,
         )
-        return entity
 
     def _create_atlas_reader_dataset_relation(self) -> AtlasRelationship:
-        relationship = AtlasRelationship(
+        return AtlasRelationship(
             relationshipType=AtlasRelationshipTypes.referenceable_reader,
             entityType1=self._get_entity_type(),
             entityQualifiedName1=self.start_key,
             entityType2=AtlasCommonTypes.reader,
             entityQualifiedName2=self._get_reader_key(),
-            attributes=dict(count=self.read_count)
+            attributes=dict(count=self.read_count),
         )
-        return relationship
 
     def _create_atlas_user_reader_relation(self) -> AtlasRelationship:
-        relationship = AtlasRelationship(
+        return AtlasRelationship(
             relationshipType=AtlasRelationshipTypes.reader_user,
             entityType1=AtlasCommonTypes.reader,
             entityQualifiedName1=self._get_reader_key(),
             entityType2=AtlasCommonTypes.user,
             entityQualifiedName2=self._get_user_key(),
-            attributes={}
+            attributes={},
         )
-        return relationship
 
     def _create_next_atlas_entity(self) -> Iterator[AtlasEntity]:
         yield self._create_atlas_user_entity()

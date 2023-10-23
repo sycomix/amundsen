@@ -25,71 +25,62 @@ class ApacheSupersetTableExtractor(ApacheSupersetBaseExtractor):
         for entry in data:
             dataset_details, dataset_objects = entry
 
-            database_id = self.get_nested_field(dataset_details, 'result.database.id')
-
-            if database_id:
-                database_details = self._get_database_details(database_id)
-
-                sql = self.get_nested_field(dataset_details, 'result.sql') or ''
-
-                # if sql exists then table_name cannot be associated with physical table in db
-                if not len(sql) > 0:
-                    uri = self.get_nested_field(database_details, 'result.sqlalchemy_uri')
-                    database_spec = make_url(uri)
-
-                    db = self.driver_mapping.get(database_spec.drivername, database_spec.drivername)
-                    schema = database_spec.database
-
-                    cluster = self.cluster_mapping.get(str(database_id), self.cluster)
-                    tbl = self.get_nested_field(dataset_details, 'result.table_name')
-
-                    table_key = TableMetadata.TABLE_KEY_FORMAT.format(db=db,
-                                                                      cluster=cluster,
-                                                                      schema=schema,
-                                                                      tbl=tbl)
-
-                    for dashboard in dataset_objects.get('dashboards', dict()).get('result', []):
-                        dashboard_id = str(dashboard.get('id'))
-
-                        if not dashboards.get(dashboard_id):
-                            dashboards[dashboard_id] = set()
-
-                        dashboards[dashboard_id].add(table_key)
-                else:
-                    pass
-            else:
+            if not (
+                database_id := self.get_nested_field(
+                    dataset_details, 'result.database.id'
+                )
+            ):
                 continue
 
+            database_details = self._get_database_details(database_id)
+
+            sql = self.get_nested_field(dataset_details, 'result.sql') or ''
+
+                # if sql exists then table_name cannot be associated with physical table in db
+            if len(sql) <= 0:
+                uri = self.get_nested_field(database_details, 'result.sqlalchemy_uri')
+                database_spec = make_url(uri)
+
+                db = self.driver_mapping.get(database_spec.drivername, database_spec.drivername)
+                schema = database_spec.database
+
+                cluster = self.cluster_mapping.get(str(database_id), self.cluster)
+                tbl = self.get_nested_field(dataset_details, 'result.table_name')
+
+                table_key = TableMetadata.TABLE_KEY_FORMAT.format(db=db,
+                                                                  cluster=cluster,
+                                                                  schema=schema,
+                                                                  tbl=tbl)
+
+                for dashboard in dataset_objects.get('dashboards', dict()).get('result', []):
+                    dashboard_id = str(dashboard.get('id'))
+
+                    if not dashboards.get(dashboard_id):
+                        dashboards[dashboard_id] = set()
+
+                    dashboards[dashboard_id].add(table_key)
         for dashboard_id, table_keys in dashboards.items():
             table_metadata: Dict[str, Any] = {'dashboard_id': dashboard_id, 'table_ids': table_keys}
 
             table_metadata.update(**self.common_params)
 
-            result = DashboardTable(**table_metadata)
-
-            yield result
+            yield DashboardTable(**table_metadata)
 
     def _get_dataset_details(self, dataset_id: str) -> Dict[str, Any]:
         url = self.build_full_url(f'api/v1/dataset/{dataset_id}')
 
-        data = self.execute_query(url)
-
-        return data
+        return self.execute_query(url)
 
     def _get_dataset_related_objects(self, dataset_id: str) -> Dict[str, Any]:
         url = self.build_full_url(f'api/v1/dataset/{dataset_id}/related_objects')
 
-        data = self.execute_query(url)
-
-        return data
+        return self.execute_query(url)
 
     @lru_cache(maxsize=512)
     def _get_database_details(self, database_id: str) -> Dict[str, Any]:
         url = self.build_full_url(f'api/v1/database/{database_id}')
 
-        data = self.execute_query(url)
-
-        return data
+        return self.execute_query(url)
 
     @property
     def driver_mapping(self) -> Dict[str, str]:

@@ -57,9 +57,13 @@ class ModeDashboardLastModifiedTimestampExtractor(ModeDashboardExecutionsExtract
         field_names = ['dashboard_id', 'dashboard_group_id', 'last_modified_timestamp']
         max_record_size = 1000
         pagination_json_path = 'reports[*]'
-        last_modified_query = ModePaginatedRestApiQuery(query_to_join=seed_query, url=url, params=params,
-                                                        json_path=json_path, field_names=field_names,
-                                                        skip_no_result=True, max_record_size=max_record_size,
-                                                        pagination_json_path=pagination_json_path)
-
-        return last_modified_query
+        return ModePaginatedRestApiQuery(
+            query_to_join=seed_query,
+            url=url,
+            params=params,
+            json_path=json_path,
+            field_names=field_names,
+            skip_no_result=True,
+            max_record_size=max_record_size,
+            pagination_json_path=pagination_json_path,
+        )

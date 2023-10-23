@@ -140,14 +140,12 @@ class DatabricksSQLDashboardExtractor(Extractor):
         return extractor
 
     def _build_transformer(self) -> ChainedTransformer:
-        transformers = []
         # transform timestamps from ISO to unix epoch
         ts_transformer_1 = TimestampStringToEpoch()
         ts_transformer_1.init(
             ConfigFactory.from_dict({TS_FIELD_NAME: "created_timestamp"})
         )
-        transformers.append(ts_transformer_1)
-
+        transformers = [ts_transformer_1]
         ts_transformer_2 = TimestampStringToEpoch()
         ts_transformer_2.init(
             ConfigFactory.from_dict({TS_FIELD_NAME: "last_modified_timestamp"})

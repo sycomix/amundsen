@@ -103,7 +103,7 @@ def popular_resources() -> Response:
             dashboards = json_response.get(ResourceType.Dashboard.name, [])
             popular_dashboards = [marshall_dashboard_partial(dashboard) for dashboard in dashboards]
         else:
-            message = 'Encountered error: Request to metadata service failed with status code ' + str(status_code)
+            message = f'Encountered error: Request to metadata service failed with status code {str(status_code)}'
             logging.error(message)
             popular_tables = []
             popular_dashboards = []
@@ -116,7 +116,7 @@ def popular_resources() -> Response:
         payload = jsonify({'results': all_popular_resources, 'msg': message})
         return make_response(payload, status_code)
     except Exception as e:
-        message = 'Encountered exception: ' + str(e)
+        message = f'Encountered exception: {str(e)}'
         logging.exception(message)
         payload = jsonify({'results': [{}], 'msg': message})
         return make_response(payload, HTTPStatus.INTERNAL_SERVER_ERROR)
@@ -141,7 +141,7 @@ def get_table_metadata() -> Response:
         results_dict = _get_table_metadata(table_key=table_key, index=list_item_index, source=list_item_source)
         return make_response(jsonify(results_dict), results_dict.get('status_code', HTTPStatus.INTERNAL_SERVER_ERROR))
     except Exception as e:
-        message = 'Encountered exception: ' + str(e)
+        message = f'Encountered exception: {str(e)}'
         logging.exception(message)
         return make_response(jsonify({'tableData': {}, 'msg': message}), HTTPStatus.INTERNAL_SERVER_ERROR)
 
@@ -160,7 +160,7 @@ def _get_table_metadata(*, table_key: str, index: int, source: str) -> Dict[str,
         response = request_metadata(url=url)
     except ValueError as e:
         # envoy client BadResponse is a subclass of ValueError
-        message = 'Encountered exception: ' + str(e)
+        message = f'Encountered exception: {str(e)}'
         results_dict['msg'] = message
         results_dict['status_code'] = getattr(e, 'code', HTTPStatus.INTERNAL_SERVER_ERROR)
         logging.exception(message)
@@ -185,7 +185,7 @@ def _get_table_metadata(*, table_key: str, index: int, source: str) -> Dict[str,
         results_dict['msg'] = 'Success'
         return results_dict
     except Exception as e:
-        message = 'Encountered exception: ' + str(e)
+        message = f'Encountered exception: {str(e)}'
         results_dict['msg'] = message
         logging.exception(message)
         # explicitly raise the exception which will trigger 500 api response
@@ -221,7 +221,7 @@ def update_table_owner() -> Response:
         payload = jsonify({'msg': message})
         return make_response(payload, status_code)
     except Exception as e:
-        payload = jsonify({'msg': 'Encountered exception: ' + str(e)})
+        payload = jsonify({'msg': f'Encountered exception: {str(e)}'})
         return make_response(payload, HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
@@ -249,7 +249,9 @@ def get_last_indexed() -> Response:
         payload = jsonify({'timestamp': timestamp, 'msg': message})
         return make_response(payload, status_code)
     except Exception as e:
-        payload = jsonify({'timestamp': None, 'msg': 'Encountered exception: ' + str(e)})
+        payload = jsonify(
+            {'timestamp': None, 'msg': f'Encountered exception: {str(e)}'}
+        )
         return make_response(payload, HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
@@ -274,7 +276,9 @@ def get_table_description() -> Response:
         payload = jsonify({'description': description, 'msg': message})
         return make_response(payload, status_code)
     except Exception as e:
-        payload = jsonify({'description': None, 'msg': 'Encountered exception: ' + str(e)})
+        payload = jsonify(
+            {'description': None, 'msg': f'Encountered exception: {str(e)}'}
+        )
         return make_response(payload, HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
@@ -301,7 +305,9 @@ def get_column_description() -> Response:
         payload = jsonify({'description': description, 'msg': message})
         return make_response(payload, status_code)
     except Exception as e:
-        payload = jsonify({'description': None, 'msg': 'Encountered exception: ' + str(e)})
+        payload = jsonify(
+            {'description': None, 'msg': f'Encountered exception: {str(e)}'}
+        )
         return make_response(payload, HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
@@ -327,7 +333,9 @@ def get_type_metadata_description() -> Response:
         payload = jsonify({'description': description, 'msg': message})
         return make_response(payload, status_code)
     except Exception as e:
-        payload = jsonify({'description': None, 'msg': 'Encountered exception: ' + str(e)})
+        payload = jsonify(
+            {'description': None, 'msg': f'Encountered exception: {str(e)}'}
+        )
         return make_response(payload, HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
@@ -365,7 +373,7 @@ def put_table_description() -> Response:
         payload = jsonify({'msg': message})
         return make_response(payload, status_code)
     except Exception as e:
-        payload = jsonify({'msg': 'Encountered exception: ' + str(e)})
+        payload = jsonify({'msg': f'Encountered exception: {str(e)}'})
         return make_response(payload, HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
@@ -405,7 +413,7 @@ def put_column_description() -> Response:
         payload = jsonify({'msg': message})
         return make_response(payload, status_code)
     except Exception as e:
-        payload = jsonify({'msg': 'Encountered exception: ' + str(e)})
+        payload = jsonify({'msg': f'Encountered exception: {str(e)}'})
         return make_response(payload, HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
@@ -445,7 +453,7 @@ def put_type_metadata_description() -> Response:
         payload = jsonify({'msg': message})
         return make_response(payload, status_code)
     except Exception as e:
-        payload = jsonify({'msg': 'Encountered exception: ' + str(e)})
+        payload = jsonify({'msg': f'Encountered exception: {str(e)}'})
         return make_response(payload, HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
@@ -471,7 +479,7 @@ def get_tags() -> Response:
         payload = jsonify({'tags': tags, 'msg': message})
         return make_response(payload, status_code)
     except Exception as e:
-        message = 'Encountered exception: ' + str(e)
+        message = f'Encountered exception: {str(e)}'
         payload = jsonify({'tags': [], 'msg': message})
         logging.exception(message)
         return make_response(payload, HTTPStatus.INTERNAL_SERVER_ERROR)
@@ -499,7 +507,7 @@ def get_badges() -> Response:
         payload = jsonify({'badges': badges, 'msg': message})
         return make_response(payload, status_code)
     except Exception as e:
-        message = 'Encountered exception: ' + str(e)
+        message = f'Encountered exception: {str(e)}'
         payload = jsonify({'badges': [], 'msg': message})
         logging.exception(message)
         return make_response(payload, HTTPStatus.INTERNAL_SERVER_ERROR)
@@ -558,7 +566,7 @@ def update_table_tags() -> Response:
         return make_response(payload, http_status_code)
 
     except Exception as e:
-        message = 'Encountered exception: ' + str(e)
+        message = f'Encountered exception: {str(e)}'
         logging.exception(message)
         payload = jsonify({'msg': message})
         return make_response(payload, HTTPStatus.INTERNAL_SERVER_ERROR)
@@ -594,7 +602,7 @@ def update_dashboard_tags() -> Response:
         payload = jsonify({'msg': message})
         return make_response(payload, status_code)
     except Exception as e:
-        message = 'Encountered exception: ' + str(e)
+        message = f'Encountered exception: {str(e)}'
         logging.exception(message)
         payload = jsonify({'msg': message})
         return make_response(payload, HTTPStatus.INTERNAL_SERVER_ERROR)
@@ -630,7 +638,7 @@ def get_user() -> Response:
         }
         return make_response(jsonify(payload), status_code)
     except Exception as e:
-        message = 'Encountered exception: ' + str(e)
+        message = f'Encountered exception: {str(e)}'
         logging.exception(message)
         payload = jsonify({'msg': message})
         return make_response(payload, HTTPStatus.INTERNAL_SERVER_ERROR)
@@ -675,7 +683,7 @@ def get_bookmark() -> Response:
         }
         return make_response(jsonify({'msg': message, 'bookmarks': all_bookmarks}), status_code)
     except Exception as e:
-        message = 'Encountered exception: ' + str(e)
+        message = f'Encountered exception: {str(e)}'
         logging.exception(message)
         return make_response(jsonify({'msg': message}), HTTPStatus.INTERNAL_SERVER_ERROR)
 
@@ -717,7 +725,7 @@ def update_bookmark() -> Response:
 
         return make_response(jsonify({'msg': 'success', 'response': response.json()}), status_code)
     except Exception as e:
-        message = 'Encountered exception: ' + str(e)
+        message = f'Encountered exception: {str(e)}'
         logging.exception(message)
         return make_response(jsonify({'msg': message}), HTTPStatus.INTERNAL_SERVER_ERROR)
 
@@ -741,7 +749,7 @@ def get_user_read() -> Response:
         return make_response(jsonify({'msg': 'success', 'read': read_tables}), status_code)
 
     except Exception as e:
-        message = 'Encountered exception: ' + str(e)
+        message = f'Encountered exception: {str(e)}'
         logging.exception(message)
         return make_response(jsonify({'msg': message}), HTTPStatus.INTERNAL_SERVER_ERROR)
 
@@ -770,7 +778,7 @@ def get_user_own() -> Response:
         }
         return make_response(jsonify({'msg': 'success', 'own': all_owned}), status_code)
     except Exception as e:
-        message = 'Encountered exception: ' + str(e)
+        message = f'Encountered exception: {str(e)}'
         logging.exception(message)
         return make_response(jsonify({'msg': message}), HTTPStatus.INTERNAL_SERVER_ERROR)
 
@@ -798,7 +806,7 @@ def get_dashboard_metadata() -> Response:
         status_code = response.status_code
         return make_response(jsonify({'msg': 'success', 'dashboard': dashboard}), status_code)
     except Exception as e:
-        message = 'Encountered exception: ' + str(e)
+        message = f'Encountered exception: {str(e)}'
         logging.exception(message)
         return make_response(jsonify({'dashboard': {}, 'msg': message}), HTTPStatus.INTERNAL_SERVER_ERROR)
 
@@ -814,7 +822,7 @@ def get_related_dashboard_metadata(table_key: str) -> Response:
         results_dict = _get_related_dashboards_metadata(url=url)
         return make_response(jsonify(results_dict), results_dict.get('status_code', HTTPStatus.INTERNAL_SERVER_ERROR))
     except Exception as e:
-        message = 'Encountered exception: ' + str(e)
+        message = f'Encountered exception: {str(e)}'
         logging.exception(message)
         return make_response(jsonify({'dashboards': [], 'msg': message}), HTTPStatus.INTERNAL_SERVER_ERROR)
 
@@ -831,7 +839,7 @@ def _get_related_dashboards_metadata(*, url: str) -> Dict[str, Any]:
         response = request_metadata(url=url)
     except ValueError as e:
         # envoy client BadResponse is a subclass of ValueError
-        message = 'Encountered exception: ' + str(e)
+        message = f'Encountered exception: {str(e)}'
         results_dict['msg'] = message
         results_dict['status_code'] = getattr(e, 'code', HTTPStatus.INTERNAL_SERVER_ERROR)
         logging.exception(message)
@@ -854,7 +862,7 @@ def _get_related_dashboards_metadata(*, url: str) -> Dict[str, Any]:
             'status_code': status_code
         }
     except Exception as e:
-        message = 'Encountered exception: ' + str(e)
+        message = f'Encountered exception: {str(e)}'
         results_dict['msg'] = message
         logging.exception(message)
         # explicitly raise the exception which will trigger 500 api response
@@ -889,7 +897,7 @@ def get_table_lineage() -> Response:
         }
         return make_response(jsonify(payload), 200)
     except Exception as e:
-        payload = jsonify({'msg': 'Encountered exception: ' + str(e)})
+        payload = jsonify({'msg': f'Encountered exception: {str(e)}'})
         return make_response(payload, HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
@@ -919,7 +927,7 @@ def get_column_lineage() -> Response:
         }
         return make_response(jsonify(payload), 200)
     except Exception as e:
-        payload = jsonify({'msg': 'Encountered exception: ' + str(e)})
+        payload = jsonify({'msg': f'Encountered exception: {str(e)}'})
         return make_response(payload, HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
@@ -945,7 +953,9 @@ def get_feature_description() -> Response:
         payload = jsonify({'description': description, 'msg': message})
         return make_response(payload, status_code)
     except Exception as e:
-        payload = jsonify({'description': None, 'msg': 'Encountered exception: ' + str(e)})
+        payload = jsonify(
+            {'description': None, 'msg': f'Encountered exception: {str(e)}'}
+        )
         return make_response(payload, HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
@@ -971,7 +981,7 @@ def put_feature_description() -> Response:
         payload = jsonify({'msg': message})
         return make_response(payload, status_code)
     except Exception as e:
-        payload = jsonify({'msg': 'Encountered exception: ' + str(e)})
+        payload = jsonify({'msg': f'Encountered exception: {str(e)}'})
         return make_response(payload, HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
@@ -991,7 +1001,7 @@ def get_feature_generation_code() -> Response:
         payload = response.json()
         return make_response(jsonify(payload), 200)
     except Exception as e:
-        payload = jsonify({'msg': 'Encountered exception: ' + str(e)})
+        payload = jsonify({'msg': f'Encountered exception: {str(e)}'})
         return make_response(payload, HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
@@ -1024,7 +1034,7 @@ def get_feature_lineage() -> Response:
         }
         return make_response(jsonify(payload), 200)
     except Exception as e:
-        payload = jsonify({'msg': 'Encountered exception: ' + str(e)})
+        payload = jsonify({'msg': f'Encountered exception: {str(e)}'})
         return make_response(payload, HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
@@ -1051,7 +1061,7 @@ def update_feature_owner() -> Response:
         payload = jsonify({'msg': message})
         return make_response(payload, status_code)
     except Exception as e:
-        payload = jsonify({'msg': 'Encountered exception: ' + str(e)})
+        payload = jsonify({'msg': f'Encountered exception: {str(e)}'})
         return make_response(payload, HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
@@ -1101,7 +1111,7 @@ def update_feature_tags() -> Response:
         return make_response(payload, http_status_code)
 
     except Exception as e:
-        message = 'Encountered exception: ' + str(e)
+        message = f'Encountered exception: {str(e)}'
         logging.exception(message)
         payload = jsonify({'msg': message})
         return make_response(payload, HTTPStatus.INTERNAL_SERVER_ERROR)
@@ -1122,7 +1132,7 @@ def get_feature_metadata() -> Response:
         results_dict = _get_feature_metadata(feature_key=feature_key, index=list_item_index, source=list_item_source)
         return make_response(jsonify(results_dict), results_dict.get('status_code', HTTPStatus.INTERNAL_SERVER_ERROR))
     except Exception as e:
-        message = 'Encountered exception: ' + str(e)
+        message = f'Encountered exception: {str(e)}'
         logging.exception(message)
         return make_response(jsonify({'featureData': {}, 'msg': message}), HTTPStatus.INTERNAL_SERVER_ERROR)
 
@@ -1141,7 +1151,7 @@ def _get_feature_metadata(*, feature_key: str, index: int, source: str) -> Dict[
         response = request_metadata(url=url)
     except ValueError as e:
         # envoy client BadResponse is a subclass of ValueError
-        message = 'Encountered exception: ' + str(e)
+        message = f'Encountered exception: {str(e)}'
         results_dict['msg'] = message
         results_dict['status_code'] = getattr(e, 'code', HTTPStatus.INTERNAL_SERVER_ERROR)
         logging.exception(message)
@@ -1165,7 +1175,7 @@ def _get_feature_metadata(*, feature_key: str, index: int, source: str) -> Dict[
         results_dict['msg'] = 'Success'
         return results_dict
     except Exception as e:
-        message = 'Encountered exception: ' + str(e)
+        message = f'Encountered exception: {str(e)}'
         results_dict['msg'] = message
         logging.exception(message)
         # explicitly raise the exception which will trigger 500 api response

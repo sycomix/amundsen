@@ -64,10 +64,14 @@ class ModeDashboardUsageExtractor(Extractor):
         stats_max_record_size = 1000
         stats_pagination_json_path = 'report_stats[*]'
         reports_query_merger = QueryMerger(query_to_merge=reports_query, merge_key='dashboard_id')
-        report_stats_query = ModePaginatedRestApiQuery(query_to_join=seed_query, url=stats_url, params=params,
-                                                       json_path=stats_json_path, field_names=stats_field_names,
-                                                       skip_no_result=True, max_record_size=stats_max_record_size,
-                                                       pagination_json_path=stats_pagination_json_path,
-                                                       query_merger=reports_query_merger)
-
-        return report_stats_query
+        return ModePaginatedRestApiQuery(
+            query_to_join=seed_query,
+            url=stats_url,
+            params=params,
+            json_path=stats_json_path,
+            field_names=stats_field_names,
+            skip_no_result=True,
+            max_record_size=stats_max_record_size,
+            pagination_json_path=stats_pagination_json_path,
+            query_merger=reports_query_merger,
+        )

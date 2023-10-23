@@ -67,11 +67,11 @@ class GenericUsageExtractor(Extractor):
             table=self._popularity_table_name
         )
 
-        LOGGER.info("SQL for popularity: {}".format(self.sql_stmt))
+        LOGGER.info(f"SQL for popularity: {self.sql_stmt}")
 
         self._alchemy_extractor = sql_alchemy_extractor.from_surrounding_config(conf, self.sql_stmt)
         sql_alch_conf = Scoped.get_scoped_conf(conf, self._alchemy_extractor.get_scope()) \
-            .with_fallback(ConfigFactory.from_dict({SQLAlchemyExtractor.EXTRACT_SQL: self.sql_stmt}))
+                .with_fallback(ConfigFactory.from_dict({SQLAlchemyExtractor.EXTRACT_SQL: self.sql_stmt}))
         self._alchemy_extractor.init(sql_alch_conf)
         self._extract_iter: Union[None, Iterator] = None
 
@@ -92,14 +92,17 @@ class GenericUsageExtractor(Extractor):
         :return:
         """
         for row in self._get_raw_extract_iter():
-            col_readers = []
-            col_readers.append(ColumnReader(database=self._database_key,
-                                            cluster=row["database"],
-                                            schema=row["schema"],
-                                            table=row["name"],
-                                            column="*",
-                                            user_email=row["user_email"],
-                                            read_count=row["read_count"]))
+            col_readers = [
+                ColumnReader(
+                    database=self._database_key,
+                    cluster=row["database"],
+                    schema=row["schema"],
+                    table=row["name"],
+                    column="*",
+                    user_email=row["user_email"],
+                    read_count=row["read_count"],
+                )
+            ]
             yield TableColumnUsage(col_readers=col_readers)
 
     def _get_raw_extract_iter(self) -> Iterator[Dict[str, Any]]:
@@ -107,7 +110,5 @@ class GenericUsageExtractor(Extractor):
         Provides iterator of result row from SQLAlchemy extractor
         :return:
         """
-        row = self._alchemy_extractor.extract()
-        while row:
+        while row := self._alchemy_extractor.extract():
             yield row
-            row = self._alchemy_extractor.extract()

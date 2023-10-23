@@ -34,7 +34,7 @@ class BaseAnnouncementClient(abc.ABC):
         try:
             announcements = self.get_posts()
         except Exception as e:
-            message = 'Encountered exception getting posts: ' + str(e)
+            message = f'Encountered exception getting posts: {str(e)}'
             return _create_error_response(message)
 
         try:
@@ -43,5 +43,5 @@ class BaseAnnouncementClient(abc.ABC):
             payload = jsonify({'posts': data.get('posts'), 'msg': 'Success'})
             return make_response(payload, HTTPStatus.OK)
         except ValidationError as err:
-            message = 'Announcement data dump returned errors: ' + str(err.messages)
+            message = f'Announcement data dump returned errors: {str(err.messages)}'
             return _create_error_response(message)

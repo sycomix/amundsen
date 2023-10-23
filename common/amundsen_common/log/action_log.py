@@ -90,8 +90,9 @@ def _build_metrics(
         'keyword_args_json': json.dumps(kwargs),
     }  # type: Dict[str, Any]
 
-    caller_retriever = flask_app.config.get(CALLER_RETRIEVAL_INSTANCE_KEY, '')
-    if caller_retriever:
+    if caller_retriever := flask_app.config.get(
+        CALLER_RETRIEVAL_INSTANCE_KEY, ''
+    ):
         metrics['user'] = caller_retriever.get_caller()
     else:
         metrics['user'] = 'UNKNOWN'

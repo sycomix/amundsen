@@ -104,7 +104,7 @@ class BaseRedashPreviewClient(BasePreviewClient):
         api_key = self._get_query_api_key(params) or self.user_api_key
         if api_key is None:
             raise RedashApiKeyNotProvidedException('No API key provided')
-        self.headers = {"Authorization": "Key {}".format(api_key)}
+        self.headers = {"Authorization": f"Key {api_key}"}
 
     def _get_query_api_key(self, params: Dict) -> Optional[str]:
         """
@@ -180,11 +180,7 @@ class BaseRedashPreviewClient(BasePreviewClient):
         # When submitting a query, Redash can return 2 distinct payloads. One if the
         # query result has been cached by Redash and one if the query was submitted
         # to be executed. The 'job' object is returned if the query is not cached.
-        if 'job' in resp_json:
-            redash_cached = False
-        else:
-            redash_cached = True
-
+        redash_cached = 'job' not in resp_json
         return resp_json, redash_cached
 
     def _wait_for_query_finish(self, job_id: str, max_wait: int = 60) -> str:

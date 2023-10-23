@@ -58,10 +58,12 @@ def create_neo4j_node_key_constraint(node_file: str,
 
                         session.write_transaction(execute_neo4j_statement, create_stmt)
                     except Neo4jError as e:
-                        if e.code != NEO4J_EQUIVALENT_SCHEMA_RULE_ALREADY_EXISTS_ERROR_CODE\
-                                and e.code != NEO4J_INDEX_ALREADY_EXISTS_ERROR_CODE:
+                        if e.code not in [
+                            NEO4J_EQUIVALENT_SCHEMA_RULE_ALREADY_EXISTS_ERROR_CODE,
+                            NEO4J_INDEX_ALREADY_EXISTS_ERROR_CODE,
+                        ]:
                             raise
-                        # Else, swallow the exception, to make this function idempotent.
+                                            # Else, swallow the exception, to make this function idempotent.
                 labels.add(label)
 
     LOGGER.info('Indices have been created.')
@@ -72,12 +74,12 @@ def create_props_param(record_dict: dict, additional_publisher_metadata_fields: 
     """
     Create a dict of all the params for a given record
     """
-    params = {}
-
-    for k, v in {**record_dict, **additional_publisher_metadata_fields}.items():
-        params[strip_unquoted_suffix(k)] = v
-
-    return params
+    return {
+        strip_unquoted_suffix(k): v
+        for k, v in (
+            record_dict | additional_publisher_metadata_fields
+        ).items()
+    }
 
 
 def execute_neo4j_statement(tx: Transaction,

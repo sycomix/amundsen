@@ -64,22 +64,16 @@ class TestQuery(unittest.TestCase):
         }]
 
         actual = []
-        node = self.query_metadata.create_next_node()
-        while node:
+        while node := self.query_metadata.create_next_node():
             serialized_node = neo4_serializer.serialize_node(node)
             actual.append(serialized_node)
-            node = self.query_metadata.create_next_node()
-
         self.assertEqual(actual, expected_nodes)
 
     def test_create_relation(self) -> None:
         actual = []
-        relation = self.query_metadata.create_next_relation()
-        while relation:
+        while relation := self.query_metadata.create_next_relation():
             serialized_relation = neo4_serializer.serialize_relationship(relation)
             actual.append(serialized_relation)
-            relation = self.query_metadata.create_next_relation()
-
         expected_relations = [
             {
                 RELATION_START_KEY: 'hive://gold.test_schema1/test_table1',

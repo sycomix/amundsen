@@ -37,8 +37,7 @@ class QueryBase(GraphSerializable):
                 sb.append(' ')
             sb.append(c.lower())
             if c in ('`', '"', "'"):
-                for d in QueryBase._process_quoted(it, c):
-                    sb.append(d)
+                sb.extend(iter(QueryBase._process_quoted(it, c)))
         if sb[-1] == ';':
             sb.pop()
         return ''.join(sb)

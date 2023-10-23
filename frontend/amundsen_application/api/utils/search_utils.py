@@ -108,12 +108,9 @@ def generate_query_json(*, filters: Dict = {}, page_index: int, search_term: str
     """
 
     return {
-        'page_index': int(page_index),
-        'search_request': {
-            'type': 'AND',
-            'filters': filters
-        },
-        'query_term': search_term
+        'page_index': page_index,
+        'search_request': {'type': 'AND', 'filters': filters},
+        'query_term': search_term,
     }
 
 

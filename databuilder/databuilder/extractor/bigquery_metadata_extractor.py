@@ -55,8 +55,7 @@ class BigQueryMetadataExtractor(BaseBigQueryExtractor):
                         continue
 
                     table_id = table_prefix
-                    grouped_tables.add(table_prefix)
-
+                    grouped_tables.add(table_id)
                 try:
                     table = self.bigquery_service.tables().get(
                         projectId=tableRef['projectId'],
@@ -80,16 +79,15 @@ class BigQueryMetadataExtractor(BaseBigQueryExtractor):
                             # TRICKY: this mutates :cols:
                             total_cols = self._iterate_over_cols('', column, cols, total_cols + 1)
 
-                table_meta = TableMetadata(
+                yield TableMetadata(
                     database='bigquery',
                     cluster=tableRef['projectId'],
                     schema=tableRef['datasetId'],
                     name=table_id,
                     description=table.get('description', None),
                     columns=cols,
-                    is_view=table['type'] == 'VIEW')
-
-                yield table_meta
+                    is_view=table['type'] == 'VIEW',
+                )
 
     def _iterate_over_cols(self,
                            parent: str,
@@ -97,12 +95,8 @@ class BigQueryMetadataExtractor(BaseBigQueryExtractor):
                            cols: List[ColumnMetadata],
                            total_cols: int) -> int:
         get_column_type: Callable[[dict], str] = lambda column: column['type'] + ':' + column['mode']\
-            if column.get('mode') else column['type']
-        if len(parent) > 0:
-            col_name = f'{parent}.{column["name"]}'
-        else:
-            col_name = column['name']
-
+                if column.get('mode') else column['type']
+        col_name = f'{parent}.{column["name"]}' if parent != "" else column['name']
         if column['type'] == 'RECORD':
             col = ColumnMetadata(
                 name=col_name,

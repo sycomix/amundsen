@@ -17,16 +17,18 @@ map_keyword = Keyword("map")
 struct_keyword = Keyword("struct")
 union_keyword = Keyword("uniontype")
 
-field_name = Word(alphanums + "_")
+field_name = Word(f"{alphanums}_")
 field_type = Forward()
 
 # Scalar types
 union_list = delimitedList(field_type)
 union_type = nestedExpr(
-    opener=union_keyword + "<", closer=">", content=union_list, ignoreExpr=None  # type: ignore
+    opener=f"{union_keyword}<", closer=">", content=union_list, ignoreExpr=None
 )
-scalar_quantifier = "(" + Word(nums) + Optional(")" | "," + Word(nums) + ")")
-scalar_type = union_type | OneOrMore(Word(alphanums + "_")) + Optional(scalar_quantifier)
+scalar_quantifier = f"({Word(nums)}" + Optional(")" | f",{Word(nums)})")
+scalar_type = union_type | OneOrMore(Word(f"{alphanums}_")) + Optional(
+    scalar_quantifier
+)
 
 # Complex types
 array_field = "<" + field_type("type")
@@ -37,10 +39,13 @@ array_type = nestedExpr(
     opener=array_keyword, closer=">", content=array_field, ignoreExpr=None  # type: ignore
 )
 map_type = nestedExpr(
-    opener=map_keyword + "<", closer=">", content=map_field, ignoreExpr=None  # type: ignore
+    opener=f"{map_keyword}<", closer=">", content=map_field, ignoreExpr=None
 )
 struct_type = nestedExpr(
-    opener=struct_keyword + "<", closer=">", content=struct_list, ignoreExpr=None  # type: ignore
+    opener=f"{struct_keyword}<",
+    closer=">",
+    content=struct_list,
+    ignoreExpr=None,
 )
 
 field_type <<= originalTextFor(array_type | map_type | struct_type | scalar_type)

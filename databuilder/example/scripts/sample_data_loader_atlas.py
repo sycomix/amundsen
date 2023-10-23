@@ -310,46 +310,37 @@ def create_es_publisher_sample_job(elasticsearch_index_alias='table_search_index
     # unique name of new index in Elasticsearch
     elasticsearch_new_index_key = f'{entity_type}_{uuid.uuid4()}'
 
-    job_config = ConfigFactory.from_dict({
-        'extractor.atlas_search_data.{}'.format(AtlasSearchDataExtractor.ATLAS_URL_CONFIG_KEY):
-            atlas_host,
-        'extractor.atlas_search_data.{}'.format(AtlasSearchDataExtractor.ATLAS_PORT_CONFIG_KEY):
-            atlas_port,
-        'extractor.atlas_search_data.{}'.format(AtlasSearchDataExtractor.ATLAS_PROTOCOL_CONFIG_KEY):
-            'http',
-        'extractor.atlas_search_data.{}'.format(AtlasSearchDataExtractor.ATLAS_VALIDATE_SSL_CONFIG_KEY):
-            False,
-        'extractor.atlas_search_data.{}'.format(AtlasSearchDataExtractor.ATLAS_USERNAME_CONFIG_KEY):
-            atlas_user,
-        'extractor.atlas_search_data.{}'.format(AtlasSearchDataExtractor.ATLAS_PASSWORD_CONFIG_KEY):
-            atlas_password,
-        'extractor.atlas_search_data.{}'.format(AtlasSearchDataExtractor.ATLAS_SEARCH_CHUNK_SIZE_KEY):
-            ATLAS_SEARCH_CHUNK_SIZE,
-        'extractor.atlas_search_data.{}'.format(AtlasSearchDataExtractor.ATLAS_DETAILS_CHUNK_SIZE_KEY):
-            ATLAS_DETAILS_CHUNK_SIZE,
-        'extractor.atlas_search_data.{}'.format(AtlasSearchDataExtractor.PROCESS_POOL_SIZE_KEY):
-            ATLAS_PROCESS_POOL_SIZE,
-        'extractor.atlas_search_data.{}'.format(AtlasSearchDataExtractor.ENTITY_TYPE_KEY):
-            entity_type.title(),
-        'loader.filesystem.elasticsearch.file_path': extracted_search_data_path,
-        'loader.filesystem.elasticsearch.mode': 'w',
-        'publisher.elasticsearch.file_path': extracted_search_data_path,
-        'publisher.elasticsearch.mode': 'r',
-        'publisher.elasticsearch.client': elasticsearch_client,
-        'publisher.elasticsearch.new_index': elasticsearch_new_index_key,
-        'publisher.elasticsearch.doc_type': '_doc',
-        'publisher.elasticsearch.alias': elasticsearch_index_alias,
-    })
+    job_config = ConfigFactory.from_dict(
+        {
+            f'extractor.atlas_search_data.{AtlasSearchDataExtractor.ATLAS_URL_CONFIG_KEY}': atlas_host,
+            f'extractor.atlas_search_data.{AtlasSearchDataExtractor.ATLAS_PORT_CONFIG_KEY}': atlas_port,
+            f'extractor.atlas_search_data.{AtlasSearchDataExtractor.ATLAS_PROTOCOL_CONFIG_KEY}': 'http',
+            f'extractor.atlas_search_data.{AtlasSearchDataExtractor.ATLAS_VALIDATE_SSL_CONFIG_KEY}': False,
+            f'extractor.atlas_search_data.{AtlasSearchDataExtractor.ATLAS_USERNAME_CONFIG_KEY}': atlas_user,
+            f'extractor.atlas_search_data.{AtlasSearchDataExtractor.ATLAS_PASSWORD_CONFIG_KEY}': atlas_password,
+            f'extractor.atlas_search_data.{AtlasSearchDataExtractor.ATLAS_SEARCH_CHUNK_SIZE_KEY}': ATLAS_SEARCH_CHUNK_SIZE,
+            f'extractor.atlas_search_data.{AtlasSearchDataExtractor.ATLAS_DETAILS_CHUNK_SIZE_KEY}': ATLAS_DETAILS_CHUNK_SIZE,
+            f'extractor.atlas_search_data.{AtlasSearchDataExtractor.PROCESS_POOL_SIZE_KEY}': ATLAS_PROCESS_POOL_SIZE,
+            f'extractor.atlas_search_data.{AtlasSearchDataExtractor.ENTITY_TYPE_KEY}': entity_type.title(),
+            'loader.filesystem.elasticsearch.file_path': extracted_search_data_path,
+            'loader.filesystem.elasticsearch.mode': 'w',
+            'publisher.elasticsearch.file_path': extracted_search_data_path,
+            'publisher.elasticsearch.mode': 'r',
+            'publisher.elasticsearch.client': elasticsearch_client,
+            'publisher.elasticsearch.new_index': elasticsearch_new_index_key,
+            'publisher.elasticsearch.doc_type': '_doc',
+            'publisher.elasticsearch.alias': elasticsearch_index_alias,
+        }
+    )
 
     # only optionally add these keys, so need to dynamically `put` them
     if elasticsearch_mapping:
         job_config.put(f'publisher.elasticsearch.{ElasticsearchPublisher.ELASTICSEARCH_MAPPING_CONFIG_KEY}',
                        elasticsearch_mapping)
 
-    job = DefaultJob(conf=job_config,
-                     task=task,
-                     publisher=ElasticsearchPublisher())
-    return job
+    return DefaultJob(
+        conf=job_config, task=task, publisher=ElasticsearchPublisher()
+    )
 
 
 if __name__ == "__main__":

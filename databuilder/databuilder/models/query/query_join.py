@@ -181,24 +181,15 @@ class QueryJoinMetadata(GraphSerializable):
         )
 
         if self.yield_relation_nodes:
-            for l_tbl_item in self.left_table._create_next_node():
-                yield l_tbl_item
-            for r_tbl_item in self.right_table._create_next_node():
-                yield r_tbl_item
+            yield from self.left_table._create_next_node()
+            yield from self.right_table._create_next_node()
             if self.query_metadata:
-                for query_item in self.query_metadata._create_next_node():
-                    yield query_item
+                yield from self.query_metadata._create_next_node()
 
     def _create_relation_iterator(self) -> Iterator[GraphRelationship]:
-        relations = self.get_query_relations()
-        for relation in relations:
-            yield relation
-
+        yield from self.get_query_relations()
         if self.yield_relation_nodes:
-            for l_tbl_rel in self.left_table._create_next_relation():
-                yield l_tbl_rel
-            for r_tbl_rel in self.right_table._create_next_relation():
-                yield r_tbl_rel
+            yield from self.left_table._create_next_relation()
+            yield from self.right_table._create_next_relation()
             if self.query_metadata:
-                for query_rel in self.query_metadata._create_relation_iterator():
-                    yield query_rel
+                yield from self.query_metadata._create_relation_iterator()

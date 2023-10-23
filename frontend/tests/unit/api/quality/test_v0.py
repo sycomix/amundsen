@@ -48,9 +48,7 @@ class QualityTest(unittest.TestCase):
                 },
             )
 
-    @unittest.mock.patch(
-        quality_client_class_name + ".get_table_quality_checks_summary"
-    )
+    @unittest.mock.patch(f"{quality_client_class_name}.get_table_quality_checks_summary")
     def test_good_client_response(
         self, mock_get_table_quality_checks_summary: unittest.mock.Mock
     ) -> None:

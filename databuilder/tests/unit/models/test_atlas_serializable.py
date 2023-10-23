@@ -22,11 +22,8 @@ class TestSerialize(unittest.TestCase):
         movie = Movie('Top Gun', actors, cities)
 
         actual = []
-        entity = movie.next_atlas_entity()
-        while entity:
+        while entity := movie.next_atlas_entity():
             actual.append(atlas_serializer.serialize_entity(entity))
-            entity = movie.next_atlas_entity()
-
         expected = [
             {
                 'name': 'Tom Cruise',
@@ -68,11 +65,8 @@ class TestSerialize(unittest.TestCase):
         self.assertEqual(expected, actual)
 
         actual = []
-        relation = movie.next_atlas_relation()
-        while relation:
+        while relation := movie.next_atlas_relation():
             actual.append(atlas_serializer.serialize_relationship(relation))
-            relation = movie.next_atlas_relation()
-
         expected = [
             {
                 'entityQualifiedName1': 'movie://Top Gun',
@@ -151,14 +145,12 @@ class Movie(AtlasSerializable):
                 attr_key, attr_value = attr
                 actor_entity_attrs[attr_key] = attr_value
 
-            actor_entity = AtlasEntity(
+            yield AtlasEntity(
                 typeName=actor.TYPE,
                 operation=AtlasSerializedEntityOperation.CREATE,
                 attributes=actor_entity_attrs,
                 relationships=None,
             )
-            yield actor_entity
-
         for city in self._cities:
             attrs_mapping = [
                 (AtlasCommonParams.qualified_name, city.KEY_FORMAT.format(city.name)),
@@ -170,14 +162,12 @@ class Movie(AtlasSerializable):
                 attr_key, attr_value = attr
                 city_entity_attrs[attr_key] = attr_value
 
-            city_entity = AtlasEntity(
+            yield AtlasEntity(
                 typeName=city.TYPE,
                 operation=AtlasSerializedEntityOperation.CREATE,
                 attributes=city_entity_attrs,
                 relationships=None,
             )
-            yield city_entity
-
         attrs_mapping = [
             (AtlasCommonParams.qualified_name, self.KEY_FORMAT.format(self._name)),
             ('name', self._name),
@@ -188,31 +178,31 @@ class Movie(AtlasSerializable):
             attr_key, attr_value = attr
             movie_entity_attrs[attr_key] = attr_value
 
-        relationship_list = []
         """
         relationship in form 'relation_attribute#relation_entity_type#qualified_name_of_related_object
         """
-        for actor in self._actors:
-            relationship_list.append(
-                AtlasSerializedEntityFields.relationships_kv_separator
-                .join((
+        relationship_list = [
+            AtlasSerializedEntityFields.relationships_kv_separator.join(
+                (
                     'actors',
                     self.MOVIE_ACTOR_RELATION_TYPE,
                     actor.KEY_FORMAT.format(actor.name),
-                )),
+                )
             )
-
-        movie_entity = AtlasEntity(
+            for actor in self._actors
+        ]
+        yield AtlasEntity(
             typeName=self.TYPE,
             operation=AtlasSerializedEntityOperation.CREATE,
             attributes=movie_entity_attrs,
-            relationships=AtlasSerializedEntityFields.relationships_separator.join(relationship_list),
+            relationships=AtlasSerializedEntityFields.relationships_separator.join(
+                relationship_list
+            ),
         )
-        yield movie_entity
 
     def _create_next_atlas_relation(self) -> Iterator[AtlasRelationship]:
         for city in self._cities:
-            city_relationship = AtlasRelationship(
+            yield AtlasRelationship(
                 relationshipType=self.MOVIE_CITY_RELATION_TYPE,
                 entityType1=self.TYPE,
                 entityQualifiedName1=self.KEY_FORMAT.format(self._name),
@@ -220,7 +210,6 @@ class Movie(AtlasSerializable):
                 entityQualifiedName2=city.KEY_FORMAT.format(city.name),
                 attributes={},
             )
-            yield city_relationship
 
 
 if __name__ == '__main__':

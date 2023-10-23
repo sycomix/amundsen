@@ -41,7 +41,7 @@ def create_feast_job_config():
     node_files_folder = f"{tmp_folder}/nodes/"
     relationship_files_folder = f"{tmp_folder}/relationships/"
 
-    job_config = ConfigFactory.from_dict(
+    return ConfigFactory.from_dict(
         {
             f"extractor.feast.{FeastExtractor.FEAST_REPOSITORY_PATH}": feast_repository_path,
             f"loader.filesystem_csv_neo4j.{FsNeo4jCSVLoader.NODE_DIR_PATH}": node_files_folder,
@@ -54,7 +54,6 @@ def create_feast_job_config():
             "publisher.neo4j.job_publish_tag": "some_unique_tag",  # TO-DO unique tag must be added
         }
     )
-    return job_config
 
 
 def create_es_publish_job_config(
@@ -81,7 +80,7 @@ def create_es_publish_job_config(
     # elastic search client instance
     elasticsearch_client = es
     # unique name of new index in Elasticsearch
-    elasticsearch_new_index_key = "tables" + str(uuid.uuid4())
+    elasticsearch_new_index_key = f"tables{str(uuid.uuid4())}"
 
     job_config = ConfigFactory.from_dict(
         {

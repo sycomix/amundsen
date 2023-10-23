@@ -93,8 +93,9 @@ class RedashDashboardExtractor(Extractor):
         )
 
         self._parse_tables = None
-        tbl_parser_path = conf.get_string(RedashDashboardExtractor.TABLE_PARSER_KEY)
-        if tbl_parser_path:
+        if tbl_parser_path := conf.get_string(
+            RedashDashboardExtractor.TABLE_PARSER_KEY
+        ):
             module_name, fn_name = tbl_parser_path.rsplit('.', 1)
             mod = importlib.import_module(module_name)
             self._parse_tables = getattr(mod, fn_name)
@@ -190,7 +191,7 @@ class RedashDashboardExtractor(Extractor):
                     for tbl in self._parse_tables(viz):
                         table_keys.add(tbl.key)
 
-            if len(table_keys) > 0:
+            if table_keys:
                 yield DashboardTable(table_ids=list(table_keys), **identity_data)
 
     def extract(self) -> Any:
@@ -245,15 +246,12 @@ class RedashDashboardExtractor(Extractor):
 
     def _build_transformer(self) -> ChainedTransformer:
 
-        transformers = []
-
         # transform timestamps from ISO to unix epoch
         ts_transformer_1 = TimestampStringToEpoch()
         ts_transformer_1.init(ConfigFactory.from_dict({
             TS_FIELD_NAME: 'created_timestamp',
         }))
-        transformers.append(ts_transformer_1)
-
+        transformers = [ts_transformer_1]
         ts_transformer_2 = TimestampStringToEpoch()
         ts_transformer_2.init(ConfigFactory.from_dict({
             TS_FIELD_NAME: 'last_modified_timestamp',

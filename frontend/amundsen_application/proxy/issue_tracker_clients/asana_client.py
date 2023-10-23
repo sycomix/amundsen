@@ -82,9 +82,9 @@ class AsanaClient(BaseIssueTrackerClient):
                 table_parent_task_gid,
                 {
                     'name': title,
-                    'notes': description + f'\n Table URL: {table_url}',
-                    'custom_fields': {self.priority_field_gid: enum_value['gid']}
-                }
+                    'notes': f'{description}\n Table URL: {table_url}',
+                    'custom_fields': {self.priority_field_gid: enum_value['gid']},
+                },
             )
         )
 
@@ -145,16 +145,20 @@ class AsanaClient(BaseIssueTrackerClient):
         self.priority_field_enum_options = priority_field['enum_options']
 
     def _get_parent_task_gid_for_table_uri(self, table_uri: str) -> str:
-        table_parent_tasks = list(self.asana_client.tasks.search_tasks_for_workspace(
-            self.asana_workspace_gid,
-            {
-                'projects.any': [self.asana_project_gid],
-                'custom_fields.{}.value'.format(self.table_uri_field_gid): table_uri,
-            }
-        ))
+        if table_parent_tasks := list(
+            self.asana_client.tasks.search_tasks_for_workspace(
+                self.asana_workspace_gid,
+                {
+                    'projects.any': [self.asana_project_gid],
+                    f'custom_fields.{self.table_uri_field_gid}.value': table_uri,
+                },
+            )
+        ):
+            if len(table_parent_tasks) > 1:
+                logging.warn(f'There are currently two tasks with the name "{table_uri}"')
 
-        # Create the parent task if it doesn't exist.
-        if len(table_parent_tasks) == 0:
+            return table_parent_tasks[0]['gid']
+        else:
             table_parent_task = self.asana_client.tasks.create_task({
                 'name': table_uri,
                 'custom_fields': {
@@ -164,11 +168,6 @@ class AsanaClient(BaseIssueTrackerClient):
             })
 
             return table_parent_task['gid']
-        else:
-            if len(table_parent_tasks) > 1:
-                logging.warn('There are currently two tasks with the name "{}"'.format(table_uri))
-
-            return table_parent_tasks[0]['gid']
 
     def _task_url(self, task_gid: str) -> str:
         return 'https://app.asana.com/0/{project_gid}/{task_gid}'.format(

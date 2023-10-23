@@ -68,7 +68,7 @@ class QueryMetadata(QueryBase):
         self.table_keys = [tm._get_table_key() for tm in tables]
         self.user = user
         self.yield_relation_nodes = yield_relation_nodes
-        self._sql_begin = sql[:25] + '...'
+        self._sql_begin = f'{sql[:25]}...'
         self._node_iter = self._create_next_node()
         self._relation_iter = self._create_relation_iterator()
 
@@ -144,23 +144,15 @@ class QueryMetadata(QueryBase):
         )
         if self.yield_relation_nodes:
             for table in self.tables:
-                for tbl_item in table._create_next_node():
-                    yield tbl_item
+                yield from table._create_next_node()
             if self.user:
-                usr = self.user.create_next_node()
-                while usr:
+                while usr := self.user.create_next_node():
                     yield usr
-                    usr = self.user.create_next_node()
 
     def _create_relation_iterator(self) -> Iterator[GraphRelationship]:
-        relations = self.get_query_relations()
-        for relation in relations:
-            yield relation
-
+        yield from self.get_query_relations()
         if self.yield_relation_nodes:
             for table in self.tables:
-                for tbl_rel in table._create_next_relation():
-                    yield tbl_rel
+                yield from table._create_next_relation()
             if self.user:
-                for usr_rel in self.user._create_relation_iterator():
-                    yield usr_rel
+                yield from self.user._create_relation_iterator()

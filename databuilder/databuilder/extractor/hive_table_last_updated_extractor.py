@@ -198,7 +198,7 @@ class HiveTableLastUpdatedExtractor(Extractor):
                 self.NON_PARTITIONED_TABLE_WHERE_CLAUSE_SUFFIX_KEY),
                 default_additional_where_clause)
         else:
-            where_clause_suffix = 'WHERE {}'.format(default_additional_where_clause)
+            where_clause_suffix = f'WHERE {default_additional_where_clause}'
 
         sql_stmt = default_sql_stmt.format(
             where_clause_suffix=where_clause_suffix)
@@ -207,7 +207,7 @@ class HiveTableLastUpdatedExtractor(Extractor):
 
         sql_alchemy_extractor = SQLAlchemyExtractor()
         sql_alchemy_conf = Scoped.get_scoped_conf(self._conf, sql_alchemy_extractor.get_scope()) \
-            .with_fallback(ConfigFactory.from_dict({SQLAlchemyExtractor.EXTRACT_SQL: sql_stmt}))
+                .with_fallback(ConfigFactory.from_dict({SQLAlchemyExtractor.EXTRACT_SQL: sql_stmt}))
         sql_alchemy_extractor.init(sql_alchemy_conf)
         return sql_alchemy_extractor
 
@@ -245,19 +245,17 @@ class HiveTableLastUpdatedExtractor(Extractor):
         :return:
         """
 
-        partitioned_tbl_row = self._partitioned_table_extractor.extract()
-        while partitioned_tbl_row:
+        while partitioned_tbl_row := self._partitioned_table_extractor.extract():
             yield TableLastUpdated(table_name=partitioned_tbl_row['table_name'],
                                    last_updated_time_epoch=partitioned_tbl_row['last_updated_time'],
                                    schema=partitioned_tbl_row['schema'],
                                    db=HiveTableLastUpdatedExtractor.DATABASE,
                                    cluster=self._cluster)
-            partitioned_tbl_row = self._partitioned_table_extractor.extract()
-
         LOGGER.info('Extracting non-partitioned table')
         count = 0
-        non_partitioned_tbl_row = self._non_partitioned_table_extractor.extract()
-        while non_partitioned_tbl_row:
+        while (
+            non_partitioned_tbl_row := self._non_partitioned_table_extractor.extract()
+        ):
             count += 1
             if count % 10 == 0:
                 LOGGER.info('Processed %i non-partitioned tables', count)
@@ -276,8 +274,6 @@ class HiveTableLastUpdatedExtractor(Extractor):
 
             if table_last_updated:
                 yield table_last_updated
-
-            non_partitioned_tbl_row = self._non_partitioned_table_extractor.extract()
 
     def _get_last_updated_datetime_from_filesystem(self,
                                                    table: str,
@@ -313,12 +309,13 @@ class HiveTableLastUpdatedExtractor(Extractor):
             return None
 
         time_stamp_futures = \
-            [self._fs_worker_pool.apply_async(self._get_timestamp, (path, schema, table, storage_location))
+                [self._fs_worker_pool.apply_async(self._get_timestamp, (path, schema, table, storage_location))
              for path in paths]
         for time_stamp_future in time_stamp_futures:
             try:
-                time_stamp = time_stamp_future.get(timeout=self._fs_worker_timeout)
-                if time_stamp:
+                if time_stamp := time_stamp_future.get(
+                    timeout=self._fs_worker_timeout
+                ):
                     last_updated = max(time_stamp, last_updated)
             except TimeoutError:
                 LOGGER.warning('Timed out on paths %s . Skipping', paths)
@@ -327,13 +324,15 @@ class HiveTableLastUpdatedExtractor(Extractor):
             LOGGER.info(f'No timestamp was derived on {schema}.{table} from location: {storage_location} . Skipping')
             return None
 
-        result = TableLastUpdated(table_name=table,
-                                  last_updated_time_epoch=int((last_updated - OLDEST_TIMESTAMP).total_seconds()),
-                                  schema=schema,
-                                  db=HiveTableLastUpdatedExtractor.DATABASE,
-                                  cluster=self._cluster)
-
-        return result
+        return TableLastUpdated(
+            table_name=table,
+            last_updated_time_epoch=int(
+                (last_updated - OLDEST_TIMESTAMP).total_seconds()
+            ),
+            schema=schema,
+            db=HiveTableLastUpdatedExtractor.DATABASE,
+            cluster=self._cluster,
+        )
 
     @fs_error_handler
     def _ls(self, path: str) -> List[str]:

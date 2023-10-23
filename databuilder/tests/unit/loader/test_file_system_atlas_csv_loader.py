@@ -30,11 +30,13 @@ class TestFileSystemAtlasCSVLoader(unittest.TestCase):
     def _make_conf(self, test_name: str) -> ConfigTree:
         prefix = '/var/tmp/TestFileSystemAtlasCSVLoader'
 
-        return ConfigFactory.from_dict({
-            FsAtlasCSVLoader.ENTITY_DIR_PATH: f'{prefix}/{test_name}/{"entities"}',
-            FsAtlasCSVLoader.RELATIONSHIP_DIR_PATH: f'{prefix}/{test_name}/{"relationships"}',
-            FsAtlasCSVLoader.SHOULD_DELETE_CREATED_DIR: True,
-        })
+        return ConfigFactory.from_dict(
+            {
+                FsAtlasCSVLoader.ENTITY_DIR_PATH: f'{prefix}/{test_name}/entities',
+                FsAtlasCSVLoader.RELATIONSHIP_DIR_PATH: f'{prefix}/{test_name}/relationships',
+                FsAtlasCSVLoader.SHOULD_DELETE_CREATED_DIR: True,
+            }
+        )
 
     def tearDown(self) -> None:
         Job.closer.close()
@@ -84,8 +86,7 @@ class TestFileSystemAtlasCSVLoader(unittest.TestCase):
         for f in files:
             with open(f) as f_input:
                 reader = csv.DictReader(f_input)
-                for row in reader:
-                    result.append(collections.OrderedDict(sorted(row.items())))
+                result.extend(collections.OrderedDict(sorted(row.items())) for row in reader)
         print(result)
         return sorted(result, key=sorting_key_getter)
 

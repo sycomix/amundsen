@@ -108,11 +108,8 @@ class TestTableColumnUsage(unittest.TestCase):
         table_col_usage = TableColumnUsage(col_readers=col_readers)
 
         actual = []
-        record = table_col_usage.next_record()
-        while record:
+        while record := table_col_usage.next_record():
             actual.append(mysql_serializer.serialize_record(record))
-            record = table_col_usage.next_record()
-
         expected_user = {'rk': 'john@example.com',
                          'email': 'john@example.com'}
         expected_usage = {'table_rk': 'db://gold.scm/foo',

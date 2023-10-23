@@ -41,7 +41,7 @@ class NoticeTest(unittest.TestCase):
             self.assertEqual(
                 response.json, {'notices': {}, 'msg': 'A client for retrieving resource notices must be configured'})
 
-    @unittest.mock.patch(dummy_notice_client_class + '.get_table_notices_summary')
+    @unittest.mock.patch(f'{dummy_notice_client_class}.get_table_notices_summary')
     def test_good_client_response(self, mock_get_table_notices_summary: unittest.mock.Mock) -> None:
         local_app.config['NOTICE_CLIENT'] = dummy_notice_client_class
         mock_get_table_notices_summary.return_value = Response(response='',

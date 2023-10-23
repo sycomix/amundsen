@@ -30,8 +30,7 @@ def _build_db_cluster_key(params: Dict) -> str:
     _db = params.get('database')
     _cluster = params.get('cluster')
 
-    db_cluster_key = f'{_db}.{_cluster}'
-    return db_cluster_key
+    return f'{_db}.{_cluster}'
 
 
 class RedashSimplePreviewClient(BaseRedashPreviewClient):

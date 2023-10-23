@@ -124,7 +124,7 @@ class TestAtlasProxy(unittest.TestCase, Data):
         classif_name = self.classification_entity['classifications'][0]['typeName']
 
         col_attrs = cast(dict, self.test_column['attributes'])
-        exp_col_stats = list()
+        exp_col_stats = []
 
         for stats in test_exp_col:
             exp_col_stats.append(
@@ -651,13 +651,13 @@ class TestAtlasProxy(unittest.TestCase, Data):
         self.app.config['USER_DETAIL_METHOD'] = None
 
     def test_get_owners_details_no_owner_no_fallback(self) -> None:
-        res = self.proxy._get_owners(data_owners=list(), fallback_owner=None)
+        res = self.proxy._get_owners(data_owners=[], fallback_owner=None)
         self.assertEqual(len(res), 0)
 
     def test_get_owners_details_only_fallback(self) -> None:
         self.app.config['USER_DETAIL_METHOD'] = None
         user_id = "dummy@email.com"
-        res = self.proxy._get_owners(data_owners=list(), fallback_owner=user_id)
+        res = self.proxy._get_owners(data_owners=[], fallback_owner=user_id)
         self.assertEqual(1, len(res))
         self.assertListEqual(res, [User(**{'email': user_id, 'user_id': user_id})])
 

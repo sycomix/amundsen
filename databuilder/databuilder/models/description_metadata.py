@@ -74,48 +74,47 @@ class DescriptionMetadata(GraphSerializable, AtlasSerializable):
         # We do not want to create a node if there is no description text!
         if text is None:
             return None
-        description_node = DescriptionMetadata(text=text,
-                                               source=source or DescriptionMetadata.DEFAULT_SOURCE,
-                                               description_key=description_key,
-                                               start_label=start_label,
-                                               start_key=start_key)
-        return description_node
+        return DescriptionMetadata(
+            text=text,
+            source=source or DescriptionMetadata.DEFAULT_SOURCE,
+            description_key=description_key,
+            start_label=start_label,
+            start_key=start_key,
+        )
 
     def get_description_id(self) -> str:
         if self.source == self.DEFAULT_SOURCE:
             return "_description"
         else:
-            return "_" + self.source + "_description"
+            return f"_{self.source}_description"
 
     def get_description_default_key(self, start_key: Optional[str]) -> Optional[str]:
         return f'{start_key}/{self.get_description_id()}' if start_key else None
 
     def get_node(self, node_key: str) -> GraphNode:
-        node = GraphNode(
+        return GraphNode(
             key=node_key,
             label=self.label,
             attributes={
                 DescriptionMetadata.DESCRIPTION_SOURCE: self.source,
-                DescriptionMetadata.DESCRIPTION_TEXT: self.text
-            }
+                DescriptionMetadata.DESCRIPTION_TEXT: self.text,
+            },
         )
-        return node
 
     def get_relation(self,
                      start_node: str,
                      start_key: str,
                      end_key: str,
                      ) -> GraphRelationship:
-        relationship = GraphRelationship(
+        return GraphRelationship(
             start_label=start_node,
             start_key=start_key,
             end_label=self.label,
             end_key=end_key,
             type=DescriptionMetadata.DESCRIPTION_RELATION_TYPE,
             reverse_type=DescriptionMetadata.INVERSE_DESCRIPTION_RELATION_TYPE,
-            attributes={}
+            attributes={},
         )
-        return relationship
 
     def create_next_node(self) -> Optional[GraphNode]:
         # return the string representation of the data

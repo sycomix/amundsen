@@ -362,10 +362,12 @@ class Neo4jCsvUnwindPublisher(Publisher):
                             stmt: str,
                             records: List[dict]) -> None:
         for chunk in chunkify_list(records, self._transaction_size):
-            params_list = []
-            for record in chunk:
-                params_list.append(create_props_param(record, self._additional_publisher_metadata_fields))
-
+            params_list = [
+                create_props_param(
+                    record, self._additional_publisher_metadata_fields
+                )
+                for record in chunk
+            ]
             with self._driver.session(database=self._db_name) as session:
                 session.write_transaction(execute_neo4j_statement, stmt, {'batch': params_list})
 

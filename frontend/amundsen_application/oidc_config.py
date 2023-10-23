@@ -19,7 +19,7 @@ def get_access_headers(app: Flask) -> Optional[Dict]:
     try:
         # noinspection PyUnresolvedReferences
         access_token = json.dumps(app.auth_client.token)
-        return {'Authorization': 'Bearer {}'.format(access_token)}
+        return {'Authorization': f'Bearer {access_token}'}
     except Exception:
         return {}
 
@@ -33,8 +33,7 @@ def get_auth_user(app: Flask) -> User:
     :param app: The instance of the current app.
     :return: A class UserInfo (Note, there isn't a UserInfo class, so we use Any)
     """
-    user_info = load_user(session.get("user"))
-    return user_info
+    return load_user(session.get("user"))
 
 
 class OidcConfig(LocalConfig):

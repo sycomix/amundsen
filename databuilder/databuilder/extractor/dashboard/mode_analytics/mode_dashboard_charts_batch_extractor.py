@@ -44,9 +44,7 @@ class ModeDashboardChartsBatchExtractor(Extractor):
     def extract(self) -> Any:
 
         record = self._extractor.extract()
-        if not record:
-            return None
-        return self._transformer.transform(record=record)
+        return None if not record else self._transformer.transform(record=record)
 
     def get_scope(self) -> str:
         return 'extractor.mode_dashboard_chart_batch'
@@ -77,12 +75,13 @@ class ModeDashboardChartsBatchExtractor(Extractor):
                        'chart_name',
                        'chart_type']
         max_record_size = 1000
-        chart_batch_query = ModePaginatedRestApiQuery(query_to_join=seed_query,
-                                                      url=chart_url_template,
-                                                      params=params,
-                                                      json_path=json_path,
-                                                      pagination_json_path=json_path,
-                                                      field_names=field_names,
-                                                      skip_no_result=True,
-                                                      max_record_size=max_record_size)
-        return chart_batch_query
+        return ModePaginatedRestApiQuery(
+            query_to_join=seed_query,
+            url=chart_url_template,
+            params=params,
+            json_path=json_path,
+            pagination_json_path=json_path,
+            field_names=field_names,
+            skip_no_result=True,
+            max_record_size=max_record_size,
+        )

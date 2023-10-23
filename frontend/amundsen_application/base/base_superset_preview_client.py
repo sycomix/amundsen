@@ -53,7 +53,7 @@ class BaseSupersetPreviewClient(BasePreviewClient):
                 payload = jsonify({'preview_data': data})
                 return make_response(payload, response.status_code)
             except ValidationError as err:
-                logging.error("PreviewDataSchema serialization error " + str(err.messages))
+                logging.error(f"PreviewDataSchema serialization error {str(err.messages)}")
                 return make_response(jsonify({'preview_data': {}}), HTTPStatus.INTERNAL_SERVER_ERROR)
         except Exception:
             return make_response(jsonify({'preview_data': {}}), HTTPStatus.INTERNAL_SERVER_ERROR)

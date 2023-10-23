@@ -71,7 +71,7 @@ class ColumnDescriptionAPI(Resource):
             return None, HTTPStatus.OK
 
         except NotFoundException:
-            msg = 'table_uri {} with column {} does not exist'.format(table_uri, column_name)
+            msg = f'table_uri {table_uri} with column {column_name} does not exist'
             return {'message': msg}, HTTPStatus.NOT_FOUND
 
     @swag_from('swagger_doc/column/description_get.yml')
@@ -86,7 +86,7 @@ class ColumnDescriptionAPI(Resource):
             return {'description': description}, HTTPStatus.OK
 
         except NotFoundException:
-            msg = 'table_uri {} with column {} does not exist'.format(table_uri, column_name)
+            msg = f'table_uri {table_uri} with column {column_name} does not exist'
             return {'message': msg}, HTTPStatus.NOT_FOUND
 
         except Exception:

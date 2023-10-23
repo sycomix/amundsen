@@ -18,12 +18,7 @@ class ElasticsearchMetadataExtractor(ElasticsearchBaseExtractor):
         return 'extractor.es_metadata'
 
     def _render_programmatic_description(self, input: Optional[Dict]) -> Optional[str]:
-        if input:
-            result = f"""```\n{json.dumps(input, indent=2)}\n```"""
-
-            return result
-        else:
-            return None
+        return f"""```\n{json.dumps(input, indent=2)}\n```""" if input else None
 
     def _get_extract_iter(self) -> Iterator[Union[TableMetadata, None]]:
         indexes: Dict = self._get_indexes()
@@ -38,26 +33,23 @@ class ElasticsearchMetadataExtractor(ElasticsearchBaseExtractor):
                 for index in range(len(columns)):
                     columns[index].sort_order = index
 
-            table_metadata = TableMetadata(database=self.database,
-                                           cluster=self.cluster,
-                                           schema=self.schema,
-                                           name=index_name,
-                                           description=None,
-                                           columns=columns,
-                                           is_view=False,
-                                           tags=None,
-                                           description_source=None)
-
-            yield table_metadata
-
+            yield TableMetadata(
+                database=self.database,
+                cluster=self.cluster,
+                schema=self.schema,
+                name=index_name,
+                description=None,
+                columns=columns,
+                is_view=False,
+                tags=None,
+                description_source=None,
+            )
             if self._extract_technical_details:
                 _settings = index_metadata.get('settings', dict())
                 _aliases = index_metadata.get('aliases', dict())
 
                 settings = self._render_programmatic_description(_settings)
-                aliases = self._render_programmatic_description(_aliases)
-
-                if aliases:
+                if aliases := self._render_programmatic_description(_aliases):
                     yield TableMetadata(database=self.database,
                                         cluster=self.cluster,
                                         schema=self.schema,

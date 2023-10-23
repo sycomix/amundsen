@@ -108,8 +108,7 @@ class FsAtlasCSVLoader(Loader):
         :return:
         """
 
-        entity = csv_serializable.next_atlas_entity()
-        while entity:
+        while entity := csv_serializable.next_atlas_entity():
             entity_dict = atlas_serializer.serialize_entity(entity)
             key = (self._make_key(entity_dict), entity.typeName)
             file_suffix = '{}_{}'.format(*key)
@@ -121,10 +120,7 @@ class FsAtlasCSVLoader(Loader):
                 file_suffix,
             )
             entity_writer.writerow(entity_dict)
-            entity = csv_serializable.next_atlas_entity()
-
-        relation = csv_serializable.next_atlas_relation()
-        while relation:
+        while relation := csv_serializable.next_atlas_relation():
             relation_dict = atlas_serializer.serialize_relationship(relation)
             keys = (
                 self._make_key(relation_dict),
@@ -141,7 +137,6 @@ class FsAtlasCSVLoader(Loader):
                 file_suffix,
             )
             relation_writer.writerow(relation_dict)
-            relation = csv_serializable.next_atlas_relation()
 
     def _get_writer(
         self,

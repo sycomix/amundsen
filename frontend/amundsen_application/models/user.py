@@ -10,11 +10,7 @@ from marshmallow import ValidationError
 
 def _str_no_value(s: Optional[str]) -> bool:
     # Returns True if the given string is None or empty
-    if not s:
-        return True
-    if len(s.strip()) == 0:
-        return True
-    return False
+    return True if not s else len(s.strip()) == 0
 
 
 def load_user(user_data: Dict) -> User:

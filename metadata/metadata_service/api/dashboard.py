@@ -33,7 +33,7 @@ class DashboardDetailAPI(BaseAPI):
         try:
             return super().get(id=id)
         except NotFoundException:
-            return {'message': 'dashboard_id {} does not exist'.format(id)}, HTTPStatus.NOT_FOUND
+            return {'message': f'dashboard_id {id} does not exist'}, HTTPStatus.NOT_FOUND
 
 
 class DashboardDescriptionAPI(BaseAPI):
@@ -54,7 +54,7 @@ class DashboardDescriptionAPI(BaseAPI):
             return super().get(id=id)
 
         except NotFoundException:
-            return {'message': 'Dashboard {} does not exist'.format(id)}, HTTPStatus.NOT_FOUND
+            return {'message': f'Dashboard {id} does not exist'}, HTTPStatus.NOT_FOUND
 
         except Exception:
             return {'message': 'Internal server error!'}, HTTPStatus.INTERNAL_SERVER_ERROR
@@ -72,7 +72,7 @@ class DashboardDescriptionAPI(BaseAPI):
             return None, HTTPStatus.OK
 
         except NotFoundException:
-            return {'message': 'id {} does not exist'.format(id)}, HTTPStatus.NOT_FOUND
+            return {'message': f'id {id} does not exist'}, HTTPStatus.NOT_FOUND
 
 
 class DashboardBadgeAPI(Resource):

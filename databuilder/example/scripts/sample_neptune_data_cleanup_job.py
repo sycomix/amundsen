@@ -46,11 +46,7 @@ def create_remove_stale_data_job():
             }
         }
     })
-    job = DefaultJob(
-        conf=job_config,
-        task=NeptuneStalenessRemovalTask()
-    )
-    return job
+    return DefaultJob(conf=job_config, task=NeptuneStalenessRemovalTask())
 
 
 if __name__ == '__main__':

@@ -133,9 +133,7 @@ class EventBridgeExtractor(Extractor):
         schemas_names = []
         paginator = self._schemas.get_paginator("list_schemas")
         for result in paginator.paginate(RegistryName=registry_name):
-            for schema in result["Schemas"]:
-                schemas_names.append(schema["SchemaName"])
-
+            schemas_names.extend(schema["SchemaName"] for schema in result["Schemas"])
         schemas_descs = []
         for schema_name in schemas_names:
             schema_versions = []
@@ -166,20 +164,18 @@ class EventBridgeExtractor(Extractor):
         title: str,
         description: str,
     ) -> Optional[TableMetadata]:
-        columns = []
-        for i, (column_name, properties) in enumerate(
-            schema.get("properties", {}).items()
-        ):
-            columns.append(
-                ColumnMetadata(
-                    column_name,
-                    properties.get("description", None),
-                    EventBridgeExtractor._get_property_type(properties),
-                    i,
-                )
+        columns = [
+            ColumnMetadata(
+                column_name,
+                properties.get("description", None),
+                EventBridgeExtractor._get_property_type(properties),
+                i,
             )
-
-        if len(columns) == 0:
+            for i, (column_name, properties) in enumerate(
+                schema.get("properties", {}).items()
+            )
+        ]
+        if not columns:
             LOGGER.warning(
                 f"skipped schema with primitive type: "
                 f"{schema_name}: {jsonref.dumps(schema)}"
@@ -192,10 +188,7 @@ class EventBridgeExtractor(Extractor):
 
     @staticmethod
     def _get_latest_schema_version(schema_versions: List[Dict[str, Any]]) -> str:
-        versions = []
-        for info in schema_versions:
-            version = int(info["SchemaVersion"])
-            versions.append(version)
+        versions = [int(info["SchemaVersion"]) for info in schema_versions]
         return str(max(versions))
 
     @staticmethod
@@ -204,16 +197,15 @@ class EventBridgeExtractor(Extractor):
             return "object"
 
         if schema["type"] == "object":
-            properties = [
+            if properties := [
                 f"{name}:{EventBridgeExtractor._get_property_type(_schema)}"
                 for name, _schema in schema.get("properties", {}).items()
-            ]
-            if len(properties) > 0:
+            ]:
                 return "struct<" + ",".join(properties) + ">"
             return "struct<object>"
         elif schema["type"] == "array":
             items = EventBridgeExtractor._get_property_type(schema.get("items", {}))
-            return "array<" + items + ">"
+            return f"array<{items}>"
         else:
             if "format" in schema:
                 return f"{schema['type']}[{schema['format']}]"

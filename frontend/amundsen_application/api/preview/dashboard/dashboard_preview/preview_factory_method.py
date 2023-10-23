@@ -29,7 +29,7 @@ class DefaultPreviewMethodFactory(BasePreviewMethodFactory):
         self._object_map = {
             'mode': ModePreview()
         }
-        LOGGER.info('Supported products: {}'.format(list(self._object_map.keys())))
+        LOGGER.info(f'Supported products: {list(self._object_map.keys())}')
 
     def get_instance(self, *, uri: str) -> BasePreview:
         product = self.get_product(uri=uri)
@@ -37,7 +37,7 @@ class DefaultPreviewMethodFactory(BasePreviewMethodFactory):
         if product in self._object_map:
             return self._object_map[product]
 
-        raise NotImplementedError('Product {} is not supported'.format(product))
+        raise NotImplementedError(f'Product {product} is not supported')
 
     def get_product(self, *, uri: str) -> str:
         return uri.split('_')[0]

@@ -92,9 +92,7 @@ class BadgeMetadata(GraphSerializable, TableSerializable, AtlasSerializable):
 
     @staticmethod
     def get_badge_key(name: str) -> str:
-        if not name:
-            return ''
-        return BadgeMetadata.BADGE_KEY_FORMAT.format(badge=name)
+        return '' if not name else BadgeMetadata.BADGE_KEY_FORMAT.format(badge=name)
 
     def get_badge_nodes(self) -> List[GraphNode]:
         nodes = []
@@ -142,19 +140,13 @@ class BadgeMetadata(GraphSerializable, TableSerializable, AtlasSerializable):
         Create badge nodes
         :return:
         """
-        nodes = self.get_badge_nodes()
-        for node in nodes:
-            yield node
+        yield from self.get_badge_nodes()
 
     def _create_relation_iterator(self) -> Iterator[GraphRelationship]:
-        relations = self.get_badge_relations()
-        for relation in relations:
-            yield relation
+        yield from self.get_badge_relations()
 
     def _create_record_iterator(self) -> Iterator[RDSModel]:
-        records = self.get_badge_records()
-        for record in records:
-            yield record
+        yield from self.get_badge_records()
 
     def _create_atlas_classification_entity(self, badge: Badge) -> AtlasEntity:
         attrs_mapping = [
@@ -165,26 +157,22 @@ class BadgeMetadata(GraphSerializable, TableSerializable, AtlasSerializable):
 
         entity_attrs = get_entity_attrs(attrs_mapping)
 
-        entity = AtlasEntity(
+        return AtlasEntity(
             typeName=AtlasCommonTypes.badge,
             operation=AtlasSerializedEntityOperation.CREATE,
             attributes=entity_attrs,
-            relationships=None
+            relationships=None,
         )
 
-        return entity
-
     def _create_atlas_classification_relation(self, badge: Badge) -> AtlasRelationship:
-        table_relationship = AtlasRelationship(
+        return AtlasRelationship(
             relationshipType=AtlasRelationshipTypes.badge,
             entityType1=AtlasCommonTypes.data_set,
             entityQualifiedName1=self.start_key,
             entityType2=AtlasRelationshipTypes.badge,
             entityQualifiedName2=badge.name,
-            attributes={}
+            attributes={},
         )
-
-        return table_relationship
 
     def _create_atlas_relation_iterator(self) -> Iterator[AtlasRelationship]:
         for badge in self.badges:

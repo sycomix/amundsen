@@ -23,8 +23,7 @@ class ModeDashboardUtils(object):
     def get_seed_query(conf: ConfigTree) -> BaseRestApiQuery:
         # Seed query record for next query api to join with
         seed_record = [{'organization': conf.get_string(ORGANIZATION)}]
-        seed_query = RestApiQuerySeed(seed_record=seed_record)
-        return seed_query
+        return RestApiQuerySeed(seed_record=seed_record)
 
     @staticmethod
     def get_spaces_query_api(conf: ConfigTree) -> BaseRestApiQuery:
@@ -52,30 +51,32 @@ class ModeDashboardUtils(object):
         # based on https://mode.com/developer/discovery-api/analytics/spaces/#listSpacesForAccount
         pagination_json_path = 'spaces[*]'
         max_per_page = 1000
-        spaces_query = ModePaginatedRestApiQuery(pagination_json_path=pagination_json_path,
-                                                 max_record_size=max_per_page, query_to_join=seed_query,
-                                                 url=spaces_url_template, params=params, json_path=json_path,
-                                                 field_names=field_names)
-
-        return spaces_query
+        return ModePaginatedRestApiQuery(
+            pagination_json_path=pagination_json_path,
+            max_record_size=max_per_page,
+            query_to_join=seed_query,
+            url=spaces_url_template,
+            params=params,
+            json_path=json_path,
+            field_names=field_names,
+        )
 
     @staticmethod
     def get_auth_params(conf: ConfigTree, discover_auth: bool = False) -> Dict[str, Any]:
-        if discover_auth:
-            # Mode discovery API needs custom token set in header
-            # https://mode.com/developer/discovery-api/introduction/
-            params = {
+        return (
+            {
                 "headers": {
                     "Authorization": conf.get_string(MODE_BEARER_TOKEN),
                 }
-            }  # type: Dict[str, Any]
-        else:
-            params = {
-                'auth': HTTPBasicAuth(conf.get_string(MODE_ACCESS_TOKEN),
-                                      conf.get_string(MODE_PASSWORD_TOKEN)
-                                      )
             }
-        return params
+            if discover_auth
+            else {
+                'auth': HTTPBasicAuth(
+                    conf.get_string(MODE_ACCESS_TOKEN),
+                    conf.get_string(MODE_PASSWORD_TOKEN),
+                )
+            }
+        )
 
     @staticmethod
     def create_mode_rest_api_extractor(restapi_query: BaseRestApiQuery,

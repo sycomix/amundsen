@@ -15,14 +15,17 @@ from databuilder.models.dashboard.dashboard_query import DashboardQuery
 
 class ApacheSupersetChartExtractor(ApacheSupersetBaseExtractor):
     def chart_field_mappings(self) -> type_fields_mapping:
-        result = [
+        return [
             ('chart_id', 'id', lambda x: str(x), ''),
             ('chart_name', 'slice_name', None, ''),
             ('chart_type', 'viz_type', None, ''),
-            ('chart_url', 'url', None, ''),  # currently not available in superset chart api
+            (
+                'chart_url',
+                'url',
+                None,
+                '',
+            ),  # currently not available in superset chart api
         ]
-
-        return result
 
     def _get_extract_iter(self) -> Iterator[Union[DashboardQuery, DashboardChart, None]]:
         ids = self._get_resource_ids('dashboard')
@@ -60,9 +63,7 @@ class ApacheSupersetChartExtractor(ApacheSupersetBaseExtractor):
 
         dashboard_data = _data.get('dashboards', [dict()])[0].get('__Dashboard__', dict())
 
-        data = dashboard_id, dashboard_data
-
-        return data
+        return dashboard_id, dashboard_data
 
     @property
     def dummy_query_id(self) -> str:

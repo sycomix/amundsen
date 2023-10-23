@@ -221,7 +221,7 @@ class Neo4jStalenessRemovalTask(Task):
         for t in targets:
             if isinstance(t, TargetWithCondition):
                 target_type = t.target_type
-                extra_condition = ' AND ' + t.condition
+                extra_condition = f' AND {t.condition}'
             else:
                 target_type = t
                 extra_condition = ''
@@ -265,7 +265,7 @@ class Neo4jStalenessRemovalTask(Task):
         for t in self.target_nodes:
             if isinstance(t, TargetWithCondition):
                 target_type = t.target_type
-                extra_condition = ' AND ' + t.condition
+                extra_condition = f' AND {t.condition}'
             else:
                 target_type = t
                 extra_condition = ''
@@ -293,7 +293,7 @@ class Neo4jStalenessRemovalTask(Task):
         for t in self.target_relations:
             if isinstance(t, TargetWithCondition):
                 target_type = t.target_type
-                extra_condition = ' AND ' + t.condition
+                extra_condition = f' AND {t.condition}'
             else:
                 target_type = t
                 extra_condition = ''
@@ -327,7 +327,7 @@ class Neo4jStalenessRemovalTask(Task):
         try:
             with self._driver.session(database=self.db_name) as session:
                 result = session.run(statement, **param_dict)
-                return [record for record in result]
+                return list(result)
 
         finally:
             LOGGER.debug('Cypher query execution elapsed for %i seconds', time.time() - start)

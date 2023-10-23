@@ -63,7 +63,7 @@ def execute_statement(tx: Transaction, stmt: str, params: dict = None) -> List[R
     LOGGER.debug('Executing statement: %s with params %s', stmt, params)
 
     result = tx.run(stmt, parameters=params)
-    return [record for record in result]
+    return list(result)
 
 
 def get_single_record(records_list: List[Record]) -> Record:
@@ -161,33 +161,34 @@ class Neo4jProxy(BaseProxy):
         readers = self._exec_usage_query(table_uri)
 
         wmk_results, table_writer, table_apps, timestamp_value, owners, tags, source, \
-            badges, prog_descs, resource_reports = self._exec_table_query(table_uri)
+                badges, prog_descs, resource_reports = self._exec_table_query(table_uri)
 
         joins, filters = self._exec_table_query_query(table_uri)
 
-        table = Table(database=last_neo4j_record['db']['name'],
-                      cluster=last_neo4j_record['clstr']['name'],
-                      schema=last_neo4j_record['schema']['name'],
-                      name=last_neo4j_record['tbl']['name'],
-                      tags=tags,
-                      badges=badges,
-                      description=self._safe_get(last_neo4j_record, 'tbl_dscrpt', 'description'),
-                      columns=cols,
-                      owners=owners,
-                      table_readers=readers,
-                      watermarks=wmk_results,
-                      table_writer=table_writer,
-                      table_apps=table_apps,
-                      last_updated_timestamp=timestamp_value,
-                      source=source,
-                      is_view=self._safe_get(last_neo4j_record, 'tbl', 'is_view'),
-                      programmatic_descriptions=prog_descs,
-                      common_joins=joins,
-                      common_filters=filters,
-                      resource_reports=resource_reports
-                      )
-
-        return table
+        return Table(
+            database=last_neo4j_record['db']['name'],
+            cluster=last_neo4j_record['clstr']['name'],
+            schema=last_neo4j_record['schema']['name'],
+            name=last_neo4j_record['tbl']['name'],
+            tags=tags,
+            badges=badges,
+            description=self._safe_get(
+                last_neo4j_record, 'tbl_dscrpt', 'description'
+            ),
+            columns=cols,
+            owners=owners,
+            table_readers=readers,
+            watermarks=wmk_results,
+            table_writer=table_writer,
+            table_apps=table_apps,
+            last_updated_timestamp=timestamp_value,
+            source=source,
+            is_view=self._safe_get(last_neo4j_record, 'tbl', 'is_view'),
+            programmatic_descriptions=prog_descs,
+            common_joins=joins,
+            common_filters=filters,
+            resource_reports=resource_reports,
+        )
 
     @timer_with_counter
     def _exec_col_query(self, table_uri: str) -> Tuple:
@@ -538,8 +539,7 @@ class Neo4jProxy(BaseProxy):
     def _extract_filters_from_query(self, filters: List[Dict]) -> List[Dict]:
         return_filters = []
         for filt in filters:
-            filter_where = filt.get('where_clause')
-            if filter_where:
+            if filter_where := filt.get('where_clause'):
                 return_filters.append(SqlWhere(where_clause=filter_where))
         return return_filters
 
@@ -575,7 +575,9 @@ class Neo4jProxy(BaseProxy):
         finally:
             # TODO: Add support on statsd
             if LOGGER.isEnabledFor(logging.DEBUG):
-                LOGGER.debug('Cypher query execution elapsed for {} seconds'.format(time.time() - start))
+                LOGGER.debug(
+                    f'Cypher query execution elapsed for {time.time() - start} seconds'
+                )
 
     # noinspection PyMethodMayBeStatic
     def _make_badges(self, badges: Iterable) -> List[Badge]:
@@ -585,10 +587,10 @@ class Neo4jProxy(BaseProxy):
         :param badges: A list of badges of a table, column, or type_metadata
         :return: a list of Badge objects
         """
-        _badges = []
-        for badge in badges:
-            _badges.append(Badge(badge_name=badge["key"], category=badge["category"]))
-        return _badges
+        return [
+            Badge(badge_name=badge["key"], category=badge["category"])
+            for badge in badges
+        ]
 
     @timer_with_counter
     def get_resource_description(self, *,
@@ -649,7 +651,7 @@ class Neo4jProxy(BaseProxy):
         :param description: new value for resource description
         """
         # start neo4j transaction
-        desc_key = uri + '/_description'
+        desc_key = f'{uri}/_description'
 
         upsert_desc_query = textwrap.dedent("""
         MERGE (u:Description {key: $desc_key})
@@ -690,7 +692,7 @@ class Neo4jProxy(BaseProxy):
 
         finally:
             if LOGGER.isEnabledFor(logging.DEBUG):
-                LOGGER.debug('Update process elapsed for {} seconds'.format(time.time() - start))
+                LOGGER.debug(f'Update process elapsed for {time.time() - start} seconds')
 
     @timer_with_counter
     def put_table_description(self, *,
@@ -741,9 +743,7 @@ class Neo4jProxy(BaseProxy):
 
         column_descrpt = get_single_record(result)
 
-        column_description = column_descrpt['description'] if column_descrpt else None
-
-        return column_description
+        return column_descrpt['description'] if column_descrpt else None
 
     @timer_with_counter
     def put_column_description(self, *,
@@ -758,8 +758,8 @@ class Neo4jProxy(BaseProxy):
         :return:
         """
 
-        column_uri = table_uri + '/' + column_name  # type: str
-        desc_key = column_uri + '/_description'
+        column_uri = f'{table_uri}/{column_name}'
+        desc_key = f'{column_uri}/_description'
 
         upsert_desc_query = textwrap.dedent("""
             MERGE (u:Description {key: $desc_key})
@@ -803,7 +803,7 @@ class Neo4jProxy(BaseProxy):
 
         finally:
             if LOGGER.isEnabledFor(logging.DEBUG):
-                LOGGER.debug('Update process elapsed for {} seconds'.format(time.time() - start))
+                LOGGER.debug(f'Update process elapsed for {time.time() - start} seconds')
 
     @timer_with_counter
     def add_owner(self, *,
@@ -915,11 +915,12 @@ class Neo4jProxy(BaseProxy):
                   category: str = '',
                   resource_type: ResourceType) -> None:
 
-        LOGGER.info('New badge {} for id {} with category {} '
-                    'and resource type {}'.format(badge_name, id, category, resource_type.name))
+        LOGGER.info(
+            f'New badge {badge_name} for id {id} with category {category} and resource type {resource_type.name}'
+        )
 
         validation_query = \
-            'MATCH (n:{resource_type} {{key: $key}}) return n'.format(resource_type=resource_type.name)
+                'MATCH (n:{resource_type} {{key: $key}}) return n'.format(resource_type=resource_type.name)
 
         upsert_badge_query = textwrap.dedent("""
         MERGE (u:Badge {key: $badge_name})
@@ -938,7 +939,7 @@ class Neo4jProxy(BaseProxy):
             tx = self._driver.session(database=self._database_name).begin_transaction()
             tbl_result = tx.run(validation_query, {'key': id})
             if not tbl_result.single():
-                raise NotFoundException('id {} does not exist'.format(id))
+                raise NotFoundException(f'id {id} does not exist')
 
             tx.run(upsert_badge_query, {'badge_name': badge_name,
                                         'category': category})
@@ -969,7 +970,7 @@ class Neo4jProxy(BaseProxy):
 
         # TODO for some reason when deleting it will say it was successful
         # even when the badge never existed to begin with
-        LOGGER.info('Delete badge {} for id {} with category {}'.format(badge_name, id, category))
+        LOGGER.info(f'Delete badge {badge_name} for id {id} with category {category}')
 
         # only deletes relationshop between badge and resource
         delete_query = textwrap.dedent("""
@@ -997,12 +998,13 @@ class Neo4jProxy(BaseProxy):
         """)
         records = self._execute_cypher_query(statement=query,
                                              param_dict={})
-        results = []
-        for record in records:
-            results.append(Badge(badge_name=record['badge']['key'],
-                                 category=record['badge']['category']))
-
-        return results
+        return [
+            Badge(
+                badge_name=record['badge']['key'],
+                category=record['badge']['category'],
+            )
+            for record in records
+        ]
 
     @timer_with_counter
     def add_tag(self, *,
@@ -1021,11 +1023,12 @@ class Neo4jProxy(BaseProxy):
         :param resource_type:
         :return: None
         """
-        LOGGER.info('New tag {} for id {} with type {} and resource type {}'.format(tag, id, tag_type,
-                                                                                    resource_type.name))
+        LOGGER.info(
+            f'New tag {tag} for id {id} with type {tag_type} and resource type {resource_type.name}'
+        )
 
         validation_query = \
-            'MATCH (n:{resource_type} {{key: $key}}) return n'.format(resource_type=resource_type.name)
+                'MATCH (n:{resource_type} {{key: $key}}) return n'.format(resource_type=resource_type.name)
 
         upsert_tag_query = textwrap.dedent("""
         MERGE (u:Tag {key: $tag})
@@ -1043,7 +1046,7 @@ class Neo4jProxy(BaseProxy):
             tx = self._driver.session(database=self._database_name).begin_transaction()
             tbl_result = tx.run(validation_query, {'key': id})
             if not tbl_result.single():
-                raise NotFoundException('id {} does not exist'.format(id))
+                raise NotFoundException(f'id {id} does not exist')
 
             # upsert the node
             tx.run(upsert_tag_query, {'tag': tag,
@@ -1082,8 +1085,9 @@ class Neo4jProxy(BaseProxy):
         :return:
         """
 
-        LOGGER.info('Delete tag {} for id {} with type {} and resource type: {}'.format(tag, id,
-                                                                                        tag_type, resource_type.name))
+        LOGGER.info(
+            f'Delete tag {tag} for id {id} with type {tag_type} and resource type: {resource_type.name}'
+        )
         delete_query = textwrap.dedent("""
         MATCH (n1:Tag{{key: $tag, tag_type: $tag_type}})-
         [r1:TAG]->(n2:{resource_type} {{key: $key}})-[r2:TAGGED_BY]->(n1) DELETE r1,r2
@@ -1120,11 +1124,12 @@ class Neo4jProxy(BaseProxy):
 
         records = self._execute_cypher_query(statement=query,
                                              param_dict={})
-        results = []
-        for record in records:
-            results.append(TagDetail(tag_name=record['tag_name']['key'],
-                                     tag_count=record['tag_count']))
-        return results
+        return [
+            TagDetail(
+                tag_name=record['tag_name']['key'], tag_count=record['tag_count']
+            )
+            for record in records
+        ]
 
     @timer_with_counter
     def get_latest_updated_ts(self) -> Optional[int]:
@@ -1138,9 +1143,7 @@ class Neo4jProxy(BaseProxy):
         """)
         record = self._execute_cypher_query(statement=query,
                                             param_dict={})
-        # None means we don't have record for neo4j, es last updated / index ts
-        record = get_single_record(record)
-        if record:
+        if record := get_single_record(record):
             return record.get('ts', {}).get('latest_timestamp', 0)
         else:
             return None
@@ -1175,14 +1178,20 @@ class Neo4jProxy(BaseProxy):
         records = self._execute_cypher_query(statement=query,
                                              param_dict={})
         for record in records:
-            neo4j_statistics = {'number_of_tables': record['number_of_tables'],
-                                'number_of_documented_tables': record['number_of_documented_tables'],
-                                'number_of_documented_cols': record['number_of_documented_cols'],
-                                'number_of_owners': record['number_of_owners'],
-                                'number_of_tables_with_owners': record['number_of_tables_with_owners'],
-                                'number_of_documented_and_owned_tables': record['number_of_documented_and_owned_tables']
-                                }
-            return neo4j_statistics
+            return {
+                'number_of_tables': record['number_of_tables'],
+                'number_of_documented_tables': record[
+                    'number_of_documented_tables'
+                ],
+                'number_of_documented_cols': record['number_of_documented_cols'],
+                'number_of_owners': record['number_of_owners'],
+                'number_of_tables_with_owners': record[
+                    'number_of_tables_with_owners'
+                ],
+                'number_of_documented_and_owned_tables': record[
+                    'number_of_documented_and_owned_tables'
+                ],
+            }
         return {}
 
     @_CACHE.cache('_get_global_popular_resources_uris', expire=_GET_POPULAR_RESOURCES_CACHE_EXPIRY_SEC)
@@ -1325,7 +1334,8 @@ class Neo4jProxy(BaseProxy):
         if not resource_uris:
             return []
 
-        query = textwrap.dedent(f"""
+        query = textwrap.dedent(
+            """
         MATCH (d:Dashboard)-[:DASHBOARD_OF]->(dg:Dashboardgroup)-[:DASHBOARD_GROUP_OF]->(c:Cluster)
         WHERE d.key IN $dashboards_uris
         OPTIONAL MATCH (d)-[:DESCRIPTION]->(dscrpt:Description)
@@ -1334,14 +1344,14 @@ class Neo4jProxy(BaseProxy):
         RETURN c.name as cluster_name, dg.name as dg_name, dg.dashboard_group_url as dg_url,
         d.key as uri, d.name as name, d.dashboard_url as url,
         split(d.key, '_')[0] as product,
-        dscrpt.description as description, last_exec.timestamp as last_successful_run_timestamp""")
+        dscrpt.description as description, last_exec.timestamp as last_successful_run_timestamp"""
+        )
 
         records = self._execute_cypher_query(statement=query,
                                              param_dict={'dashboards_uris': resource_uris})
 
-        popular_dashboards = []
-        for record in records:
-            popular_dashboards.append(DashboardSummary(
+        return [
+            DashboardSummary(
                 uri=record['uri'],
                 cluster=record['cluster_name'],
                 group_name=record['dg_name'],
@@ -1350,10 +1360,12 @@ class Neo4jProxy(BaseProxy):
                 name=record['name'],
                 url=record['url'],
                 description=record['description'],
-                last_successful_run_timestamp=record['last_successful_run_timestamp'],
-            ))
-
-        return popular_dashboards
+                last_successful_run_timestamp=record[
+                    'last_successful_run_timestamp'
+                ],
+            )
+            for record in records
+        ]
 
     @timer_with_counter
     def get_popular_resources(self, *,
@@ -1363,7 +1375,7 @@ class Neo4jProxy(BaseProxy):
         popular_resources: Dict[str, List] = dict()
         for resource in resource_types:
             resource_type = to_resource_type(label=resource)
-            popular_resources[resource_type.name] = list()
+            popular_resources[resource_type.name] = []
             if user_id is None:
                 # Get global popular Table/Dashboard URIs
                 resource_uris = self._get_global_popular_resources_uris(num_entries,
@@ -1409,8 +1421,7 @@ class Neo4jProxy(BaseProxy):
                                     'not found in the graph'.format(user_id=id))
 
         record = single_result.get('user_record', {})
-        manager_record = single_result.get('manager_record', {})
-        if manager_record:
+        if manager_record := single_result.get('manager_record', {}):
             manager_name = manager_record.get('full_name', '')
         else:
             manager_name = ''
@@ -1442,11 +1453,11 @@ class Neo4jProxy(BaseProxy):
 
             user_result = result.single()
             if not user_result:
-                raise RuntimeError('Failed to create user with data %s' % user_data)
+                raise RuntimeError(f'Failed to create user with data {user_data}')
             tx.commit()
 
             new_user = self._build_user_from_record(user_result['usr'])
-            new_user_created = True if user_result['created'] is True else False
+            new_user_created = user_result['created'] is True
 
         except Exception as e:
             if not tx.closed():
@@ -1463,13 +1474,13 @@ class Neo4jProxy(BaseProxy):
         Creates a Neo4j property body by converting a dictionary into a comma
         separated string of KEY = VALUE.
         """
-        props = []
-        for k, v in record_dict.items():
-            if v:
-                props.append(f'{identifier}.{k} = ${k}')
-
-        props.append(f"{identifier}.{PUBLISHED_TAG_PROPERTY_NAME} = 'api_create_update_user'")
-        props.append(f"{identifier}.{LAST_UPDATED_EPOCH_MS} = timestamp()")
+        props = [f'{identifier}.{k} = ${k}' for k, v in record_dict.items() if v]
+        props.extend(
+            (
+                f"{identifier}.{PUBLISHED_TAG_PROPERTY_NAME} = 'api_create_update_user'",
+                f"{identifier}.{LAST_UPDATED_EPOCH_MS} = timestamp()",
+            )
+        )
         return ', '.join(props)
 
     def get_users(self) -> List[UserEntity]:
@@ -1525,7 +1536,7 @@ class Neo4jProxy(BaseProxy):
         user_matcher: str = ''
 
         if id is not None:
-            resource_matcher += ':{}'.format(resource_type.name)
+            resource_matcher += f':{resource_type.name}'
             if id != '':
                 resource_matcher += ' {key: $resource_key}'
 
@@ -1536,20 +1547,19 @@ class Neo4jProxy(BaseProxy):
 
         if relation_type == UserResourceRel.follow:
             relation = f'(resource{resource_matcher})-[r1:FOLLOWED_BY]->(usr{user_matcher})-[r2:FOLLOW]->' \
-                       f'(resource{resource_matcher})'
+                           f'(resource{resource_matcher})'
         elif relation_type == UserResourceRel.own:
             relation = f'(resource{resource_matcher})-[r1:OWNER]->(usr{user_matcher})-[r2:OWNER_OF]->' \
-                       f'(resource{resource_matcher})'
+                           f'(resource{resource_matcher})'
         elif relation_type == UserResourceRel.read:
             relation = f'(resource{resource_matcher})-[r1:READ_BY]->(usr{user_matcher})-[r2:READ]->' \
-                       f'(resource{resource_matcher})'
+                           f'(resource{resource_matcher})'
         else:
             raise NotImplementedError(f'The relation type {relation_type} is not defined!')
         return relation
 
     @timer_with_counter
-    def get_dashboard_by_user_relation(self, *, user_email: str, relation_type: UserResourceRel) \
-            -> Dict[str, List[DashboardSummary]]:
+    def get_dashboard_by_user_relation(self, *, user_email: str, relation_type: UserResourceRel) -> Dict[str, List[DashboardSummary]]:
         """
         Retrieve all follow the Dashboard per user based on the relation.
 
@@ -1579,9 +1589,8 @@ class Neo4jProxy(BaseProxy):
 
         records = self._execute_cypher_query(statement=query, param_dict={'user_key': user_email})
 
-        results = []
-        for record in records:
-            results.append(DashboardSummary(
+        results = [
+            DashboardSummary(
                 uri=record['uri'],
                 cluster=record['cluster_name'],
                 group_name=record['dg_name'],
@@ -1590,14 +1599,16 @@ class Neo4jProxy(BaseProxy):
                 name=record['name'],
                 url=record['url'],
                 description=record['description'],
-                last_successful_run_timestamp=record['last_successful_run_timestamp'],
-            ))
-
+                last_successful_run_timestamp=record[
+                    'last_successful_run_timestamp'
+                ],
+            )
+            for record in records
+        ]
         return {ResourceType.Dashboard.name.lower(): results}
 
     @timer_with_counter
-    def get_table_by_user_relation(self, *, user_email: str, relation_type: UserResourceRel) \
-            -> Dict[str, List[PopularTable]]:
+    def get_table_by_user_relation(self, *, user_email: str, relation_type: UserResourceRel) -> Dict[str, List[PopularTable]]:
         """
         Retrive all follow the Table per user based on the relation.
 
@@ -1618,14 +1629,16 @@ class Neo4jProxy(BaseProxy):
 
         table_records = self._execute_cypher_query(statement=query, param_dict={'user_key': user_email})
 
-        results = []
-        for record in table_records:
-            results.append(PopularTable(
+        results = [
+            PopularTable(
                 database=record['db']['name'],
                 cluster=record['clstr']['name'],
                 schema=record['schema']['name'],
                 name=record['resource']['name'],
-                description=self._safe_get(record, 'tbl_dscrpt', 'description')))
+                description=self._safe_get(record, 'tbl_dscrpt', 'description'),
+            )
+            for record in table_records
+        ]
         return {ResourceType.Table.name.lower(): results}
 
     @timer_with_counter
@@ -1648,15 +1661,16 @@ class Neo4jProxy(BaseProxy):
 
         table_records = self._execute_cypher_query(statement=query, param_dict={'query_key': user_email})
 
-        results = []
-
-        for record in table_records:
-            results.append(PopularTable(
+        results = [
+            PopularTable(
                 database=record['db']['name'],
                 cluster=record['clstr']['name'],
                 schema=record['schema']['name'],
                 name=record['tbl']['name'],
-                description=self._safe_get(record, 'tbl_dscrpt', 'description')))
+                description=self._safe_get(record, 'tbl_dscrpt', 'description'),
+            )
+            for record in table_records
+        ]
         return {'table': results}
 
     @timer_with_counter
@@ -1806,7 +1820,7 @@ class Neo4jProxy(BaseProxy):
         dashboard_record = get_single_record(dashboard_records)
 
         if not dashboard_record:
-            raise NotFoundException('No dashboard exist with URI: {}'.format(id))
+            raise NotFoundException(f'No dashboard exist with URI: {id}')
 
         owners = []
 
@@ -1886,7 +1900,7 @@ class Neo4jProxy(BaseProxy):
         :return:
         """
         if resource_type != ResourceType.Dashboard:
-            raise NotImplementedError('{} is not supported'.format(resource_type))
+            raise NotImplementedError(f'{resource_type} is not supported')
 
         get_dashboards_using_table_query = textwrap.dedent(u"""
         MATCH (d:Dashboard)-[:DASHBOARD_WITH_TABLE]->(table:Table {key: $query_key}),
@@ -1912,10 +1926,7 @@ class Neo4jProxy(BaseProxy):
         records = self._execute_cypher_query(statement=get_dashboards_using_table_query,
                                              param_dict={'query_key': id})
 
-        results = []
-
-        for record in records:
-            results.append(DashboardSummary(**record))
+        results = [DashboardSummary(**record) for record in records]
         return {'dashboards': results}
 
     @timer_with_counter
@@ -1993,11 +2004,11 @@ class Neo4jProxy(BaseProxy):
         END AS downstream_entities RETURN downstream_entities
         """).format(depth=depth, resource=resource_type.name)
 
-        if direction == 'upstream':
-            lineage_query = get_upstream_lineage_query
-
-        elif direction == 'downstream':
+        if direction == 'downstream':
             lineage_query = get_downstream_lineage_query
+
+        elif direction == 'upstream':
+            lineage_query = get_upstream_lineage_query
 
         else:
             lineage_query = get_both_lineage_query
@@ -2006,27 +2017,32 @@ class Neo4jProxy(BaseProxy):
                                              param_dict={'query_key': id})
         result = get_single_record(records)
 
-        downstream_tables = []
-        upstream_tables = []
-
-        for downstream in result.get("downstream_entities") or []:
-            downstream_tables.append(LineageItem(**{"key": downstream["key"],
-                                                    "source": downstream["source"],
-                                                    "level": downstream["level"],
-                                                    "badges": self._make_badges(downstream["badges"]),
-                                                    "usage": downstream.get("usage", 0),
-                                                    "parent": downstream.get("parent", '')
-                                                    }))
-
-        for upstream in result.get("upstream_entities") or []:
-            upstream_tables.append(LineageItem(**{"key": upstream["key"],
-                                                  "source": upstream["source"],
-                                                  "level": upstream["level"],
-                                                  "badges": self._make_badges(upstream["badges"]),
-                                                  "usage": upstream.get("usage", 0),
-                                                  "parent": upstream.get("parent", '')
-                                                  }))
-
+        downstream_tables = [
+            LineageItem(
+                **{
+                    "key": downstream["key"],
+                    "source": downstream["source"],
+                    "level": downstream["level"],
+                    "badges": self._make_badges(downstream["badges"]),
+                    "usage": downstream.get("usage", 0),
+                    "parent": downstream.get("parent", ''),
+                }
+            )
+            for downstream in result.get("downstream_entities") or []
+        ]
+        upstream_tables = [
+            LineageItem(
+                **{
+                    "key": upstream["key"],
+                    "source": upstream["source"],
+                    "level": upstream["level"],
+                    "badges": self._make_badges(upstream["badges"]),
+                    "usage": upstream.get("usage", 0),
+                    "parent": upstream.get("parent", ''),
+                }
+            )
+            for upstream in result.get("upstream_entities") or []
+        ]
         # ToDo: Add a root_entity as an item, which will make it easier for lineage graph
         return Lineage(**{"key": id,
                           "upstream_entities": upstream_tables,
@@ -2067,10 +2083,7 @@ class Neo4jProxy(BaseProxy):
         return programmatic_descriptions
 
     def _create_owners(self, owner_records: List) -> List[User]:
-        owners = []
-        for owner in owner_records:
-            owners.append(User(email=owner['email']))
-        return owners
+        return [User(email=owner['email']) for owner in owner_records]
 
     def _create_app(self, app_record: dict, kind: str) -> Application:
         return Application(
@@ -2085,10 +2098,10 @@ class Neo4jProxy(BaseProxy):
                      producing_app_records: List,
                      consuming_app_records: List) -> Tuple[Application, List[Application]]:
 
-        table_apps = []
-        for record in producing_app_records:
-            table_apps.append(self._create_app(record, kind='Producing'))
-
+        table_apps = [
+            self._create_app(record, kind='Producing')
+            for record in producing_app_records
+        ]
         # for bw compatibility, we populate table_writer with one of the producing apps
         table_writer = get_single_record(table_apps) if table_apps else None
 
@@ -2131,11 +2144,11 @@ class Neo4jProxy(BaseProxy):
                                              param_dict={'feature_key': feature_key})
 
         if results is None:
-            raise NotFoundException('Feature with key {} does not exist'.format(feature_key))
+            raise NotFoundException(f'Feature with key {feature_key} does not exist')
 
         feature_records = get_single_record(results)
         if feature_records is None:
-            raise NotFoundException('Feature with key {} does not exist'.format(feature_key))
+            raise NotFoundException(f'Feature with key {feature_key} does not exist')
 
         watermarks = self._create_feature_watermarks(wmk_records=feature_records['wmk_records'])
 
@@ -2185,7 +2198,7 @@ class Neo4jProxy(BaseProxy):
         """
         feature_metadata = self._exec_feature_query(feature_key=feature_uri)
 
-        feature = Feature(
+        return Feature(
             key=feature_metadata['key'],
             name=feature_metadata['name'],
             version=feature_metadata['version'],
@@ -2198,11 +2211,13 @@ class Neo4jProxy(BaseProxy):
             owners=feature_metadata['owners'],
             badges=feature_metadata['badges'],
             tags=feature_metadata['tags'],
-            programmatic_descriptions=feature_metadata['programmatic_descriptions'],
+            programmatic_descriptions=feature_metadata[
+                'programmatic_descriptions'
+            ],
             last_updated_timestamp=feature_metadata['last_updated_timestamp'],
             created_timestamp=feature_metadata['created_timestamp'],
-            watermarks=feature_metadata['watermarks'])
-        return feature
+            watermarks=feature_metadata['watermarks'],
+        )
 
     def get_resource_generation_code(self, *, uri: str, resource_type: ResourceType) -> GenerationCode:
         """
@@ -2218,12 +2233,11 @@ class Neo4jProxy(BaseProxy):
         records = self._execute_cypher_query(statement=neo4j_query,
                                              param_dict={'resource_key': uri})
         if not records:
-            raise NotFoundException('Generation code for id {} does not exist'.format(id))
+            raise NotFoundException(f'Generation code for id {id} does not exist')
 
-        query_result = get_single_record(records)['query_records']
-        if not query_result:
-            raise NotFoundException('Generation code for id {} does not exist'.format(id))
-
-        return GenerationCode(key=query_result['key'],
-                              text=query_result['text'],
-                              source=query_result['source'])
+        if query_result := get_single_record(records)['query_records']:
+            return GenerationCode(key=query_result['key'],
+                                  text=query_result['text'],
+                                  source=query_result['source'])
+        else:
+            raise NotFoundException(f'Generation code for id {id} does not exist')

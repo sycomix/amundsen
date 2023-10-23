@@ -731,10 +731,10 @@ class MetadataTest(unittest.TestCase):
         :return:
         """
         url = local_app.config['METADATASERVICE_BASE'] + TABLE_ENDPOINT + \
-            '/db://cluster.schema/table/column/colA/description'
+                '/db://cluster.schema/table/column/colA/description'
         responses.add(responses.GET, url, json={'description': 'This is a test'}, status=HTTPStatus.OK)
 
-        with patch.dict(local_app.config, {'UNEDITABLE_SCHEMAS': set(['schema'])}):
+        with patch.dict(local_app.config, {'UNEDITABLE_SCHEMAS': {'schema'}}):
             with local_app.test_client() as test:
                 response = test.put(
                     '/api/metadata/v0/put_table_description',

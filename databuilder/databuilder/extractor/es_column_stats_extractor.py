@@ -32,9 +32,7 @@ class ElasticsearchColumnStatsExtractor(ElasticsearchBaseExtractor):
 
         _data = self.es.search(index=index_name, body=query)
 
-        data = _data.get('aggregations', dict()).get('stats', dict()).get('fields', list())
-
-        return data
+        return _data.get('aggregations', dict()).get('stats', dict()).get('fields', [])
 
     def _render_column_stats(self, index_name: str, spec: Dict[str, Any]) -> List[TableColumnStats]:
         result: List[TableColumnStats] = []
@@ -42,11 +40,8 @@ class ElasticsearchColumnStatsExtractor(ElasticsearchBaseExtractor):
         col_name = spec.pop('name')
 
         for stat_name, stat_val in spec.items():
-            if isinstance(stat_val, dict) or isinstance(stat_val, list):
+            if isinstance(stat_val, (dict, list)) or stat_val == 'NaN':
                 continue
-            elif stat_val == 'NaN':
-                continue
-
             stat = TableColumnStats(table_name=index_name,
                                     col_name=col_name,
                                     stat_name=stat_name,
@@ -63,8 +58,17 @@ class ElasticsearchColumnStatsExtractor(ElasticsearchBaseExtractor):
 
     @property
     def _allowed_types(self) -> Set[str]:
-        return set(['long', 'integer', 'short', 'byte', 'double',
-                    'float', 'half_float', 'scaled_float', 'unsigned_long'])
+        return {
+            'long',
+            'integer',
+            'short',
+            'byte',
+            'double',
+            'float',
+            'half_float',
+            'scaled_float',
+            'unsigned_long',
+        }
 
     def _get_extract_iter(self) -> Iterator[Union[TableColumnStats, None]]:
         indexes: Dict = self._get_indexes()
@@ -76,7 +80,4 @@ class ElasticsearchColumnStatsExtractor(ElasticsearchBaseExtractor):
             specifications = self._get_index_stats(index_name, fields)
 
             for spec in specifications:
-                stats = self._render_column_stats(index_name, spec)
-
-                for stat in stats:
-                    yield stat
+                yield from self._render_column_stats(index_name, spec)

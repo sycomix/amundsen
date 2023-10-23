@@ -58,7 +58,7 @@ def log_generic_action() -> Response:
         return make_response(jsonify({'msg': message}), HTTPStatus.OK)
 
     except Exception as e:
-        message = 'Log action failed. Encountered exception: ' + str(e)
+        message = f'Log action failed. Encountered exception: {str(e)}'
         logging.exception(message)
         payload = jsonify({'msg': message})
         return make_response(payload, HTTPStatus.INTERNAL_SERVER_ERROR)
